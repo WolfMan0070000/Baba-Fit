@@ -11,7 +11,7 @@ export default function LoginView({ onLogin, onGuest }) {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-        const endpoint = isRegister ? '/api/register' : '/api/login';
+        const endpoint = isRegister ? '/register' : '/login';
 
         try {
             const res = await fetch(`${API_BASE_URL}${endpoint}`, {

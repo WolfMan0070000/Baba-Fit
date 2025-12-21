@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Target, Scale, Ruler, Save, LogOut } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 export default function ProfileView({ user, onLogout }) {
     const [profile, setProfile] = useState({
@@ -8,7 +9,7 @@ export default function ProfileView({ user, onLogout }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch(`http://localhost:3001/api/profile?userId=${user?.id || 1}`)
+        fetch(`${API_BASE_URL}/profile?userId=${user?.id || 1}`)
             .then(res => res.json())
             .then(data => {
                 if (data.data) setProfile(data.data);
@@ -19,7 +20,7 @@ export default function ProfileView({ user, onLogout }) {
 
     const handleSave = async () => {
         try {
-            await fetch('http://localhost:3001/api/profile', {
+            await fetch(`${API_BASE_URL}/profile`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...profile, user_id: user?.id || 1 })

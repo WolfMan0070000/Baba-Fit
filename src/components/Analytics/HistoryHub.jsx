@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../config';
 import ActivityHeatmap from './ActivityHeatmap';
 import ProgressionChart from './ProgressionChart';
 import OneRepMaxChart from './OneRepMaxChart';
@@ -16,7 +17,7 @@ export default function HistoryHub({ user }) {
 
     useEffect(() => {
         // Fetch Exercises List
-        fetch(`http://localhost:3001/api/exercises?userId=${user?.id || 1}`)
+        fetch(`${API_BASE_URL}/exercises?userId=${user?.id || 1}`)
             .then(res => res.json())
             .then(data => {
                 if (data.data) {
@@ -50,7 +51,7 @@ export default function HistoryHub({ user }) {
 
     const handleExport = async () => {
         try {
-            const res = await fetch(`http://localhost:3001/api/logs?userId=${user?.id || 1}`);
+            const res = await fetch(`${API_BASE_URL}/logs?userId=${user?.id || 1}`);
             const data = await res.json();
             const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);

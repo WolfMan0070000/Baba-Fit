@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Play, FileText, Edit2, Share2, Download, FolderOpen, ChevronDown, ChevronUp, Trash2, FolderPlus, FolderInput } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 import TemplateBuilder from './TemplateBuilder';
 import { api } from '../../services/api';
 import { program } from '../../data/program';
@@ -35,8 +36,8 @@ export default function Templates({ onStartWorkout, user }) {
         const userId = user?.id || 1;
         try {
             const [resF, resT] = await Promise.all([
-                fetch(`http://localhost:3001/api/folders?userId=${userId}`),
-                fetch(`http://localhost:3001/api/templates?userId=${userId}`)
+                fetch(`${API_BASE_URL}/folders?userId=${userId}`),
+                fetch(`${API_BASE_URL}/templates?userId=${userId}`)
             ]);
             const dataF = await resF.json();
             const dataT = await resT.json();
@@ -52,7 +53,7 @@ export default function Templates({ onStartWorkout, user }) {
     const handleCreateFolder = async () => {
         if (!newFolderName.trim()) return;
         try {
-            const res = await fetch('http://localhost:3001/api/folders', {
+            const res = await fetch(`${API_BASE_URL}/folders`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newFolderName, userId: user?.id || 1 })
@@ -71,7 +72,7 @@ export default function Templates({ onStartWorkout, user }) {
         e.stopPropagation();
         if (!window.confirm('Are you sure you want to delete this workout?')) return;
         try {
-            await fetch(`http://localhost:3001/api/templates/${id}`, { method: 'DELETE' });
+            await fetch(`${API_BASE_URL}/templates/${id}`, { method: 'DELETE' });
             fetchData();
         } catch (err) {
             console.error(err);
@@ -91,7 +92,7 @@ export default function Templates({ onStartWorkout, user }) {
             const current = templates.find(t => t.id === moveTargetId);
             if (!current) return;
 
-            const res = await fetch(`http://localhost:3001/api/templates/${moveTargetId}`, {
+            const res = await fetch(`${API_BASE_URL}/templates/${moveTargetId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...current, folder_id: folderId, userId: user?.id || 1 })
@@ -116,7 +117,7 @@ export default function Templates({ onStartWorkout, user }) {
 
     const handleStart = async (templateId) => {
         try {
-            const res = await fetch(`http://localhost:3001/api/templates/${templateId}`);
+            const res = await fetch(`${API_BASE_URL}/templates/${templateId}`);
             const data = await res.json();
             if (data.data) {
                 onStartWorkout(data.data);
@@ -129,7 +130,7 @@ export default function Templates({ onStartWorkout, user }) {
     const handleEdit = async (templateId, e) => {
         e.stopPropagation();
         try {
-            const res = await fetch(`http://localhost:3001/api/templates/${templateId}`);
+            const res = await fetch(`${API_BASE_URL}/templates/${templateId}`);
             const data = await res.json();
             if (data.data) {
                 setSelectedTemplate(data.data);
@@ -144,8 +145,8 @@ export default function Templates({ onStartWorkout, user }) {
         const userId = user?.id || 1;
         const method = selectedTemplate ? 'PUT' : 'POST';
         const url = selectedTemplate
-            ? `http://localhost:3001/api/templates/${selectedTemplate.id}`
-            : 'http://localhost:3001/api/templates';
+            ? `${API_BASE_URL}/templates/${selectedTemplate.id}`
+            : `${API_BASE_URL}/templates`;
 
         try {
             const res = await fetch(url, {
@@ -166,7 +167,7 @@ export default function Templates({ onStartWorkout, user }) {
     const handleImport = async () => {
         if (!importCode) return;
         try {
-            const res = await fetch('http://localhost:3001/api/templates/import', {
+            const res = await fetch(`${API_BASE_URL}/templates/import`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ shareCode: importCode, userId: user?.id || 1 })

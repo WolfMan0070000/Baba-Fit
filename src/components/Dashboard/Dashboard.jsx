@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
+import { API_BASE_URL } from '../../config';
 import { diet } from '../../data/diet';
 import { Activity, Flame, Footprints, Calendar, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -11,7 +12,7 @@ export default function Dashboard({ onViewChange, user }) {
 
     useEffect(() => {
         // Fetch Profile
-        fetch(`http://localhost:3001/api/profile?userId=${user?.id || 1}`)
+        fetch(`${API_BASE_URL}/profile?userId=${user?.id || 1}`)
             .then(res => res.json())
             .then(data => setProfile(data.data));
 

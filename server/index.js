@@ -309,6 +309,33 @@ app.post('/api/folders', (req, res) => {
     });
 });
 
+app.put('/api/folders/:id', (req, res) => {
+    const { id } = req.params;
+    const { name, userId } = req.body;
+    db.run("UPDATE folders SET name = ? WHERE id = ? AND user_id = ?", [name, id, userId || 1], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'Folder not found' });
+        res.json({ message: 'Folder updated' });
+    });
+});
+
+app.delete('/api/folders/:id', (req, res) => {
+    const { id } = req.params;
+    const { userId } = req.body; // Or query param
+
+    // First unassign templates
+    db.run("UPDATE templates SET folder_id = NULL WHERE folder_id = ?", [id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        // Then delete folder
+        db.run("DELETE FROM folders WHERE id = ?", [id], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            if (this.changes === 0) return res.status(404).json({ error: 'Folder not found' });
+            res.json({ message: 'Folder deleted' });
+        });
+    });
+});
+
 app.get('/api/templates', (req, res) => {
     const { userId } = req.query;
     db.all("SELECT * FROM templates WHERE user_id = ?", [userId || 1], (err, rows) => {

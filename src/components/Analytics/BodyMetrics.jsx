@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Ruler, Scale, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 import ProgressionChart from './ProgressionChart';
 
 export default function BodyMetrics() {
@@ -15,7 +16,7 @@ export default function BodyMetrics() {
 
     const fetchMetrics = async () => {
         try {
-            const res = await fetch('http://localhost:3001/api/metrics');
+            const res = await fetch(`${API_BASE_URL}/metrics`);
             const data = await res.json();
             if (data.data) {
                 setMetrics(data.data.reverse()); // Newest first in UI, but reverse for chart?
@@ -30,7 +31,7 @@ export default function BodyMetrics() {
             const dateStr = new Date().toISOString().split('T')[0];
             const payload = { ...todayForm, date: dateStr };
 
-            const res = await fetch('http://localhost:3001/api/metrics', {
+            const res = await fetch(`${API_BASE_URL}/metrics`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

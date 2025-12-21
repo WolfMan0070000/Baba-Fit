@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Dumbbell, Filter, Video, X, Camera, Pencil, Trash2 } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 export default function ExerciseLibrary() {
     const [exercises, setExercises] = useState([]);
@@ -26,7 +27,7 @@ export default function ExerciseLibrary() {
 
     const fetchExercises = async () => {
         try {
-            const res = await fetch('http://localhost:3001/api/exercises');
+            const res = await fetch(`${API_BASE_URL}/exercises`);
             const data = await res.json();
             if (data.data) {
                 setExercises(data.data);
@@ -42,8 +43,8 @@ export default function ExerciseLibrary() {
         try {
             const method = newEx.id ? 'PUT' : 'POST';
             const url = newEx.id
-                ? `http://localhost:3001/api/exercises/${newEx.id}`
-                : 'http://localhost:3001/api/exercises';
+                ? `${API_BASE_URL}/exercises/${newEx.id}`
+                : `${API_BASE_URL}/exercises`;
 
             const res = await fetch(url, {
                 method: method,
@@ -70,7 +71,7 @@ export default function ExerciseLibrary() {
         e.stopPropagation();
         if (!window.confirm('Are you sure you want to delete this exercise?')) return;
         try {
-            await fetch(`http://localhost:3001/api/exercises/${id}`, { method: 'DELETE' });
+            await fetch(`${API_BASE_URL}/exercises/${id}`, { method: 'DELETE' });
             fetchExercises();
         } catch (err) {
             console.error(err);
@@ -183,13 +184,13 @@ export default function ExerciseLibrary() {
                                             const formData = new FormData();
                                             formData.append('file', file);
                                             try {
-                                                const res = await fetch('http://localhost:3001/api/upload', {
+                                                const res = await fetch(`${API_BASE_URL}/upload`, {
                                                     method: 'POST',
                                                     body: formData
                                                 });
                                                 const data = await res.json();
                                                 if (data.path) {
-                                                    setNewEx({ ...newEx, image_url: 'http://localhost:3001' + data.path });
+                                                    setNewEx({ ...newEx, image_url: `${API_BASE_URL.replace('/api', '')}` + data.path });
                                                 }
                                             } catch (err) {
                                                 console.error("Upload failed", err);

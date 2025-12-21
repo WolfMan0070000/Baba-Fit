@@ -8,9 +8,10 @@ const getUserId = () => {
         if (!user) return 1;
         const parsed = JSON.parse(user);
         return parsed.id || 1;
-    } catch (e) {
+    } catch {
         return 1;
     }
+
 };
 
 export const api = {

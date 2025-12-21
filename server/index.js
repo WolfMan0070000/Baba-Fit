@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Ensure uploads dir exists
 const uploadsDir = join(__dirname, 'uploads');
@@ -58,6 +58,18 @@ const upload = multer({ storage: storage });
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(uploadsDir));
+
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
+
+
+// Serve static frontend in production
+const distDir = join(__dirname, '../dist');
+if (fs.existsSync(distDir)) {
+    app.use(express.static(distDir));
+}
+
 
 // Sanitize userId
 app.use((req, res, next) => {
@@ -561,6 +573,17 @@ app.post('/api/progress-photos', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID, message: 'Photo saved' });
         });
+});
+
+
+// Handle SPA routing - serve index.html for all other routes
+// Handle SPA routing - serve index.html for all other routes
+app.use((req, res, next) => {
+    if (req.method === 'GET' && fs.existsSync(join(distDir, 'index.html'))) {
+        res.sendFile(join(distDir, 'index.html'));
+    } else {
+        next();
+    }
 });
 
 app.listen(PORT, () => {

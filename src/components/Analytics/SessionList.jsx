@@ -24,8 +24,9 @@ export default function SessionList() {
 
     // Group logs by exercise for display
     const groupedLogs = details ? details.logs.reduce((acc, log) => {
-        if (!acc[log.exercise_name]) acc[log.exercise_name] = [];
-        acc[log.exercise_name].push(log);
+        const name = log.exercise_name || `Unknown Exercise (ID: ${log.exercise_id})`;
+        if (!acc[name]) acc[name] = [];
+        acc[name].push(log);
         return acc;
     }, {}) : {};
 

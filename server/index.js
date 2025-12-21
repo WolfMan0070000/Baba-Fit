@@ -217,7 +217,7 @@ app.get('/api/sessions/:id', (req, res) => {
         db.all(`
             SELECT l.*, e.name as exercise_name, e.video_url
             FROM workout_logs l
-            JOIN exercises e ON l.exercise_id = e.id
+            LEFT JOIN exercises e ON l.exercise_id = e.id
             WHERE l.session_id = ? OR (l.date = ? AND l.session_id IS NULL)
             ORDER BY l.id ASC
         `, [id, session.date], (err, logs) => {

@@ -40,7 +40,7 @@ export default function SessionList() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ marginLeft: '8px', fontSize: '1.2rem' }}>Recent Workouts</h3>
-            {sessions.sort((a, b) => new Date(b.date) - new Date(a.date)).map((session, index, arr) => {
+            {(Array.isArray(sessions) ? [...sessions] : []).sort((a, b) => new Date(b.date) - new Date(a.date)).map((session, index, arr) => {
                 const prevSession = arr[index + 1];
                 const currentVol = session.total_volume || 0;
                 const prevVol = prevSession ? (prevSession.total_volume || 0) : 0;

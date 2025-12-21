@@ -96,5 +96,16 @@ export const api = {
             console.error('Error fetching volume:', error);
             return [];
         }
+    },
+
+    getExercises: async () => {
+        try {
+            const res = await fetch(`${API_URL}/exercises?userId=${getUserId()}`);
+            const data = await res.json();
+            return data.data || [];
+        } catch (error) {
+            console.error('Error fetching exercises:', error);
+            return [];
+        }
     }
 };

@@ -11,11 +11,13 @@ export default function ActivityHeatmap() {
     // Mock grid generation for last 3 months ~ 90 days
     const today = new Date();
     const days = [];
+    const heatmapData = Array.isArray(data) ? data : [];
+
     for (let i = 89; i >= 0; i--) {
         const d = new Date();
         d.setDate(today.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
-        const activity = data.find(item => item.date === dateStr);
+        const activity = heatmapData.find(item => item.date === dateStr);
         days.push({ date: dateStr, count: activity ? activity.count : 0 });
     }
 

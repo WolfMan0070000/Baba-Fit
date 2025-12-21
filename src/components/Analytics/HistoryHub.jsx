@@ -18,37 +18,36 @@ export default function HistoryHub({ user }) {
 
     useEffect(() => {
         // Fetch Exercises List
-        fetch(`${API_BASE_URL}/exercises?userId=${user?.id || 1}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.data) {
-                    setExercises(data.data);
-                    if (data.data.length > 0) setSelectedExId(data.data[0].id);
-                }
-            })
-            .catch(err => console.error("History fetch error:", err));
+        api.getExercises().then(data => {
+            if (data && data.length > 0) {
+                setExercises(data);
+                setSelectedExId(data[0].id);
+            }
+        }).catch(err => console.error("History fetch error:", err));
     }, []);
 
     useEffect(() => {
         if (!selectedExId) return;
 
         api.getVolumeData(selectedExId).then(data => {
+            if (!Array.isArray(data)) return;
+
             const vol = data.map(d => ({
-                date: d.date.slice(5),
-                value: d.volume
+                date: d.date ? d.date.slice(5) : '',
+                value: d.volume || 0
             }));
             const maxW = data.map(d => ({
-                date: d.date.slice(5),
-                value: d.max_weight
+                date: d.date ? d.date.slice(5) : '',
+                value: d.max_weight || 0
             }));
             const orm = data.map(d => ({
-                date: d.date.slice(5),
-                value: Math.round(d.one_rep_max * 10) / 10
+                date: d.date ? d.date.slice(5) : '',
+                value: Math.round((d.one_rep_max || 0) * 10) / 10
             }));
             setVolumeData(vol);
             setMaxWeightData(maxW);
             setOneRepMaxData(orm);
-        });
+        }).catch(err => console.error("Volume data error:", err));
     }, [selectedExId]);
 
     const handleExport = async () => {

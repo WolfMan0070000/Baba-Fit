@@ -38,7 +38,9 @@ export default function WeeklyCoach({ user }) {
             // For now, we utilize the sessions summary 'total_volume' if available. 
             // If not, we might need to fetch details. Assuming session objects have total_volume.
 
-            sessions.forEach(s => {
+            const sessionList = Array.isArray(sessions) ? sessions : [];
+
+            sessionList.forEach(s => {
                 const d = new Date(s.date);
                 const vol = s.total_volume || 0;
 
@@ -63,21 +65,22 @@ export default function WeeklyCoach({ user }) {
             const details = await Promise.all(detailsPromises);
 
             const processedExercises = new Set();
+            const detailList = Array.isArray(details) ? details : [];
 
-            details.forEach(d => {
-                if (!d || !d.logs) return;
+            detailList.forEach(d => {
+                if (!d || !Array.isArray(d.logs)) return;
                 d.logs.forEach(log => {
-                    if (processedExercises.has(log.exercise_name)) return;
+                    if (!log || processedExercises.has(log.exercise_name)) return;
                     if (recommendations.length >= 3) return;
 
                     // Simple Algo: Suggest +2.5kg or +1 rep
                     processedExercises.add(log.exercise_name);
                     recommendations.push({
                         name: log.exercise_name,
-                        lastWeight: log.weight,
-                        lastReps: log.reps,
-                        nextWeight: log.weight + 2.5, // Simple progressive overload
-                        nextReps: log.reps
+                        lastWeight: log.weight || 0,
+                        lastReps: log.reps || 0,
+                        nextWeight: (log.weight || 0) + 2.5, // Simple progressive overload
+                        nextReps: log.reps || 0
                     });
                 });
             });

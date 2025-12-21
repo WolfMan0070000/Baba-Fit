@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Search, X, Plus } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 
 export default function SelectExerciseModal({ onClose, onSelect }) {
     const [exercises, setExercises] = useState([]);
@@ -7,7 +8,7 @@ export default function SelectExerciseModal({ onClose, onSelect }) {
     const [search, setSearch] = useState('');
 
     useEffect(() => {
-        fetch('http://localhost:3001/api/exercises')
+        fetch(`${API_BASE_URL}/exercises`)
             .then(res => res.json())
             .then(data => {
                 if (data.data) {

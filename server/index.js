@@ -341,9 +341,9 @@ app.post('/api/templates', (req, res) => {
 
 app.put('/api/templates/:id', (req, res) => {
     const { id } = req.params;
-    const { name, notes, exercises, userId } = req.body;
+    const { name, notes, exercises, folder_id, userId } = req.body; // Added folder_id
 
-    db.run("UPDATE templates SET name = ?, notes = ? WHERE id = ? AND user_id = ?", [name, notes, id, userId || 1], function (err) {
+    db.run("UPDATE templates SET name = ?, notes = ?, folder_id = ? WHERE id = ? AND user_id = ?", [name, notes, folder_id, id, userId || 1], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         if (this.changes === 0) return res.status(404).json({ error: 'Template not found or unauthorized' });
 
@@ -360,6 +360,15 @@ app.put('/api/templates/:id', (req, res) => {
             }
             res.json({ message: 'Template updated' });
         });
+    });
+});
+
+app.delete('/api/templates/:id', (req, res) => {
+    const { id } = req.params;
+    db.run("DELETE FROM templates WHERE id = ?", [id], function (err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ error: 'Template not found' });
+        res.json({ message: 'Template deleted' });
     });
 });
 

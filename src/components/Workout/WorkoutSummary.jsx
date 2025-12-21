@@ -1,5 +1,6 @@
 import { Share2, X, CheckCircle, Camera } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { API_BASE_URL } from '../../config';
 
 export default function WorkoutSummary({ isOpen, onClose, data }) {
     const { t } = useLanguage();
@@ -56,15 +57,15 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                                     const formData = new FormData();
                                     formData.append('file', file);
                                     try {
-                                        const res = await fetch('http://localhost:3001/api/upload', { method: 'POST', body: formData });
+                                        const res = await fetch(`${API_BASE_URL}/upload`, { method: 'POST', body: formData });
                                         const uData = await res.json();
                                         if (uData.path) {
-                                            await fetch('http://localhost:3001/api/progress-photos', {
+                                            await fetch(`${API_BASE_URL}/progress-photos`, {
                                                 method: 'POST',
                                                 headers: { 'Content-Type': 'application/json' },
                                                 body: JSON.stringify({
                                                     date: new Date().toISOString(),
-                                                    image_url: 'http://localhost:3001' + uData.path,
+                                                    image_url: `${API_BASE_URL.replace('/api', '')}` + uData.path,
                                                     notes: 'Post-workout',
                                                     userId: 1 // hardcoded for now
                                                 })

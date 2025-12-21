@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:3001/api';
+import { API_BASE_URL } from '../config';
+
+const API_URL = API_BASE_URL;
 
 const getUserId = () => {
     const user = localStorage.getItem('gym_user');

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, PlayCircle, Loader2, Camera } from 'lucide-react';
+import { API_BASE_URL } from '../../config';
 import { useLanguage } from '../../context/LanguageContext';
 
 export default function ExerciseModal({ exercise, onClose }) {
@@ -11,7 +12,7 @@ export default function ExerciseModal({ exercise, onClose }) {
     useEffect(() => {
         if (!exercise?.video_url && !exercise?.image_url) {
             setLoading(true);
-            fetch('http://localhost:3001/api/exercises')
+            fetch(`${API_BASE_URL}/exercises`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.data) {
@@ -134,13 +135,13 @@ export default function ExerciseModal({ exercise, onClose }) {
                                 formData.append('file', file);
                                 try {
                                     setLoading(true);
-                                    const res = await fetch('http://localhost:3001/api/upload', {
+                                    const res = await fetch(`${API_BASE_URL}/upload`, {
                                         method: 'POST',
                                         body: formData
                                     });
                                     const data = await res.json();
                                     if (data.path) {
-                                        setImageUrl('http://localhost:3001' + data.path);
+                                        setImageUrl(`${API_BASE_URL.replace('/api', '')}` + data.path);
                                         // TODO: Optionally save this to DB indefinitely or just locally for session? 
                                         // User request implies "users can add their own", so we should persist it to custom exercise or override.
                                         // For now, I'll allow visual override.

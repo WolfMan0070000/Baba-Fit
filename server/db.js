@@ -88,19 +88,18 @@ if (isPostgres) {
         }
     });
 
-    // Pass-through wrapper to support our unified prepare/run wrapper if needed, 
-    // but cleaner to just use the instance for SQLite.
     db = localDb;
 }
 
 function initDb() {
     const idType = isPostgres ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY AUTOINCREMENT';
     const textType = 'TEXT';
-    const boolType = isPostgres ? 'BOOLEAN' : 'BOOLEAN'; // Postgres has native bool
+    const boolType = isPostgres ? 'BOOLEAN' : 'BOOLEAN';
+    // Fix: Postgres requires 'FALSE' literal, SQLite uses 0
+    const falseDefault = isPostgres ? 'FALSE' : '0';
 
     // Helper to run query safely
     const run = (sql) => {
-        // We use the wrapper 'db.run' which handles conversion
         db.run(sql, [], (err) => {
             if (err && !err.message.includes('already exists')) {
                 console.error('Init Error:', err.message, 'SQL:', sql);
@@ -113,7 +112,7 @@ function initDb() {
         username ${textType} NOT NULL UNIQUE,
         password ${textType} NOT NULL,
         email ${textType},
-        is_guest ${boolType} DEFAULT 0
+        is_guest ${boolType} DEFAULT ${falseDefault}
     )`);
 
     run(`CREATE TABLE IF NOT EXISTS workout_logs (
@@ -125,7 +124,7 @@ function initDb() {
         set_number INTEGER NOT NULL,
         weight REAL,
         reps INTEGER,
-        completed ${boolType} DEFAULT 0,
+        completed ${boolType} DEFAULT ${falseDefault},
         set_type ${textType} DEFAULT 'normal',
         rpe INTEGER
     )`);
@@ -150,7 +149,7 @@ function initDb() {
         type ${textType} DEFAULT 'weight_reps',
         video_url ${textType},
         image_url ${textType},
-        is_custom ${boolType} DEFAULT 0
+        is_custom ${boolType} DEFAULT ${falseDefault}
     )`);
 
     // Wait a bit for tables to exist before seeding (lazy approach)

@@ -25,7 +25,8 @@ export default function HistoryHub({ user }) {
                     setExercises(data.data);
                     if (data.data.length > 0) setSelectedExId(data.data[0].id);
                 }
-            });
+            })
+            .catch(err => console.error("History fetch error:", err));
     }, []);
 
     useEffect(() => {

@@ -17,7 +17,7 @@ export const api = {
 
             const res = await fetch(url);
             const data = await res.json();
-            return data.data;
+            return data.data || [];
         } catch (error) {
             console.error('Error fetching logs:', error);
             return [];
@@ -43,7 +43,7 @@ export const api = {
         try {
             const res = await fetch(`${API_URL}/sessions?userId=${getUserId()}`);
             const data = await res.json();
-            return data.data;
+            return data.data || [];
         } catch (error) {
             console.error('Error fetching sessions:', error);
             return [];
@@ -54,7 +54,7 @@ export const api = {
         try {
             const res = await fetch(`${API_URL}/sessions/${id}`);
             const data = await res.json();
-            return data.data;
+            return data.data || null;
         } catch (error) {
             console.error('Error fetching session details:', error);
             return null;
@@ -80,7 +80,7 @@ export const api = {
         try {
             const res = await fetch(`${API_URL}/history/heatmap?userId=${getUserId()}`);
             const data = await res.json();
-            return data.data;
+            return data.data || [];
         } catch (error) {
             console.error('Error fetching heatmap:', error);
             return [];
@@ -91,7 +91,7 @@ export const api = {
         try {
             const res = await fetch(`${API_URL}/history/volume/${exerciseId}?userId=${getUserId()}`);
             const data = await res.json();
-            return data.data;
+            return data.data || [];
         } catch (error) {
             console.error('Error fetching volume:', error);
             return [];

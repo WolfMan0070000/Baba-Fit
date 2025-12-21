@@ -20,12 +20,35 @@ const convertSql = (sql) => {
     // Fix specific SQLite vs Postgres syntax
     newSql = newSql.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY');
 
+    // Handle BOOLEAN literals and equalities
+    newSql = newSql.replace(/completed\s*=\s*1/gi, 'completed = TRUE');
+    newSql = newSql.replace(/completed\s*=\s*0/gi, 'completed = FALSE');
+    newSql = newSql.replace(/is_guest\s*=\s*1/gi, 'is_guest = TRUE');
+    newSql = newSql.replace(/is_guest\s*=\s*0/gi, 'is_guest = FALSE');
+
+    // Handle JOINS where one side is text and other is integer
+    // Common pattern in this app: l.exercise_id = e.id
+    newSql = newSql.replace(/exercise_id\s*=\s*e\.id/gi, 'exercise_id::text = e.id::text');
+
     // Handle RETURNING ID for Inserts if not present (simple heuristic)
     if (newSql.trim().toUpperCase().startsWith('INSERT') && !newSql.toUpperCase().includes('RETURNING')) {
         newSql += ' RETURNING id';
     }
 
     return newSql;
+};
+
+// Param Sanitizer for Postgres
+const sanitizeParams = (params) => {
+    if (!isPostgres || !params) return params;
+    return params.map(p => {
+        if (typeof p === 'string') {
+            if (/^\d+$/.test(p)) return parseInt(p, 10);
+            if (p.toLowerCase() === 'true') return true;
+            if (p.toLowerCase() === 'false') return false;
+        }
+        return p;
+    });
 };
 
 if (isPostgres) {
@@ -37,27 +60,27 @@ if (isPostgres) {
 
     db = {
         get: (sql, params, cb) => {
-            pool.query(convertSql(sql), params || [], (err, res) => {
+            pool.query(convertSql(sql), sanitizeParams(params) || [], (err, res) => {
                 if (err) return cb(err);
                 cb(null, res.rows[0]);
             });
         },
         all: (sql, params, cb) => {
-            pool.query(convertSql(sql), params || [], (err, res) => {
+            pool.query(convertSql(sql), sanitizeParams(params) || [], (err, res) => {
                 if (err) return cb(err);
                 cb(null, res.rows);
             });
         },
         run: (sql, params, cb) => {
             const finalSql = convertSql(sql);
-            pool.query(finalSql, params || [], (err, res) => {
+            pool.query(finalSql, sanitizeParams(params) || [], (err, res) => {
                 if (err) {
                     if (cb) cb(err);
                     return;
                 }
                 // Mock the 'this' context for sqlite3 compatibility (this.lastID)
                 const mockContext = {
-                    lastID: res.rows[0]?.id,
+                    lastID: res.rows?.[0]?.id,
                     changes: res.rowCount
                 };
                 if (cb) cb.call(mockContext, null);

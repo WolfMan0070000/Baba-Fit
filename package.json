@@ -11,12 +11,14 @@
     "server": "nodemon server/index.js"
   },
   "dependencies": {
+    "cloudinary": "^1.41.3",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.562.0",
     "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "nodemon": "^3.1.11",
     "pg": "^8.16.3",
     "react": "^19.2.0",

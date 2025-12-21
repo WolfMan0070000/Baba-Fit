@@ -141,7 +141,8 @@ export default function ExerciseModal({ exercise, onClose }) {
                                     });
                                     const data = await res.json();
                                     if (data.path) {
-                                        setImageUrl(`${API_BASE_URL.replace('/api', '')}` + data.path);
+                                        const finalPath = data.path.startsWith('http') ? data.path : `${API_BASE_URL.replace('/api', '')}` + data.path;
+                                        setImageUrl(finalPath);
                                         // TODO: Optionally save this to DB indefinitely or just locally for session? 
                                         // User request implies "users can add their own", so we should persist it to custom exercise or override.
                                         // For now, I'll allow visual override.

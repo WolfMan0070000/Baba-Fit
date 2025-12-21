@@ -190,7 +190,8 @@ export default function ExerciseLibrary() {
                                                 });
                                                 const data = await res.json();
                                                 if (data.path) {
-                                                    setNewEx({ ...newEx, image_url: `${API_BASE_URL.replace('/api', '')}` + data.path });
+                                                    const finalPath = data.path.startsWith('http') ? data.path : `${API_BASE_URL.replace('/api', '')}` + data.path;
+                                                    setNewEx({ ...newEx, image_url: finalPath });
                                                 }
                                             } catch (err) {
                                                 console.error("Upload failed", err);

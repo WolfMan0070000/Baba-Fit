@@ -6,6 +6,8 @@ import { dirname, join } from 'path';
 import fs from 'fs';
 import db from './db.js';
 import { exercises as seedList } from './exercise_data.js';
+import { v2 as cloudinary } from 'cloudinary';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,17 +21,37 @@ if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir);
 }
 
+// Cloudinary Config
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
 // Multer storage
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadsDir)
-    },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
-        const ext = file.originalname.split('.').pop();
-        cb(null, file.fieldname + '-' + uniqueSuffix + '.' + ext)
-    }
-})
+let storage;
+const useCloudinary = !!process.env.CLOUDINARY_CLOUD_NAME;
+
+if (useCloudinary) {
+    storage = new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
+            folder: 'gym-tracker',
+            allowed_formats: ['jpg', 'png', 'jpeg'],
+        },
+    });
+} else {
+    storage = multer.diskStorage({
+        destination: function (req, file, cb) {
+            cb(null, uploadsDir)
+        },
+        filename: function (req, file, cb) {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
+            const ext = file.originalname.split('.').pop();
+            cb(null, file.fieldname + '-' + uniqueSuffix + '.' + ext)
+        }
+    });
+}
 
 const upload = multer({ storage: storage });
 
@@ -504,7 +526,7 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
-    const filePath = `/uploads/${req.file.filename}`;
+    const filePath = useCloudinary ? req.file.path : `/uploads/${req.file.filename}`;
     res.json({ path: filePath });
 });
 

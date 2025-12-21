@@ -65,7 +65,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                                                 headers: { 'Content-Type': 'application/json' },
                                                 body: JSON.stringify({
                                                     date: new Date().toISOString(),
-                                                    image_url: `${API_BASE_URL.replace('/api', '')}` + uData.path,
+                                                    image_url: uData.path.startsWith('http') ? uData.path : `${API_BASE_URL.replace('/api', '')}` + uData.path,
                                                     notes: 'Post-workout',
                                                     userId: 1 // hardcoded for now
                                                 })

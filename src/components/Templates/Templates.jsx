@@ -28,6 +28,10 @@ export default function Templates({ onStartWorkout, user }) {
     const [moveTargetId, setMoveTargetId] = useState(null); // Template ID to move
     const [showMoveModal, setShowMoveModal] = useState(false);
 
+    // Folder Edit States
+    const [editingFolderId, setEditingFolderId] = useState(null);
+    const [editFolderName, setEditFolderName] = useState('');
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -68,6 +72,39 @@ export default function Templates({ onStartWorkout, user }) {
         }
     };
 
+    const handleUpdateFolder = async () => {
+        if (!editFolderName.trim() || !editingFolderId) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/folders/${editingFolderId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: editFolderName, userId: user?.id || 1 })
+            });
+            if (res.ok) {
+                setEditingFolderId(null);
+                setEditFolderName('');
+                fetchData();
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleDeleteFolder = async (id, e) => {
+        e.stopPropagation();
+        if (!window.confirm('Delete folder? Templates inside will be moved to Uncategorized.')) return;
+        try {
+            await fetch(`${API_BASE_URL}/folders/${id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: user?.id || 1 })
+            });
+            fetchData();
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     const handleDeleteTemplate = async (id, e) => {
         e.stopPropagation();
         if (!window.confirm('Are you sure you want to delete this workout?')) return;
@@ -85,10 +122,15 @@ export default function Templates({ onStartWorkout, user }) {
         setShowMoveModal(true);
     }
 
+    const openEditFolder = (folder, e) => {
+        e.stopPropagation();
+        setEditingFolderId(folder.id);
+        setEditFolderName(folder.name);
+    }
+
     const handleMoveTemplate = async (folderId) => {
         if (!moveTargetId) return;
         try {
-            // Fetch current template data first to preserve other fields
             const current = templates.find(t => t.id === moveTargetId);
             if (!current) return;
 
@@ -245,71 +287,140 @@ export default function Templates({ onStartWorkout, user }) {
             <AnimatePresence>
                 {showImport && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-                        className="glass-panel" style={{ padding: '16px', marginBottom: '20px' }}>
-                        <h4 style={{ marginBottom: '12px' }}>Import Workout</h4>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <input
-                                className="input-elegant"
-                                style={{ flex: 1 }}
-                                placeholder="Enter Share Code"
-                                value={importCode}
-                                onChange={e => setImportCode(e.target.value)}
-                            />
-                            <button onClick={handleImport} className="btn-primary" style={{ padding: '8px 16px' }}>Import</button>
-                            <button onClick={() => setShowImport(false)} className="btn-icon">×</button>
-                        </div>
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 50,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+                        }}
+                        onClick={() => setShowImport(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass-panel"
+                            style={{ width: '100%', maxWidth: '400px', padding: '24px', position: 'relative' }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <h3 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>Import Workout</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <input
+                                    className="input-elegant"
+                                    placeholder="Enter Share Code"
+                                    value={importCode}
+                                    onChange={e => setImportCode(e.target.value)}
+                                />
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button onClick={handleImport} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Import</button>
+                                    <button onClick={() => setShowImport(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+                                </div>
+                            </div>
+                        </motion.div>
                     </motion.div>
                 )}
 
                 {showCreateFolder && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-                        className="glass-panel" style={{ padding: '16px', marginBottom: '20px' }}>
-                        <h4 style={{ marginBottom: '12px' }}>Create Folder</h4>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <input
-                                className="input-elegant"
-                                style={{ flex: 1 }}
-                                placeholder="Folder Name"
-                                value={newFolderName}
-                                onChange={e => setNewFolderName(e.target.value)}
-                            />
-                            <button onClick={handleCreateFolder} className="btn-primary" style={{ padding: '8px 16px' }}>Create</button>
-                            <button onClick={() => setShowCreateFolder(false)} className="btn-icon">×</button>
-                        </div>
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 50,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+                        }}
+                        onClick={() => setShowCreateFolder(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass-panel"
+                            style={{ width: '100%', maxWidth: '400px', padding: '24px', position: 'relative' }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <h3 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>Create Folder</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <input
+                                    className="input-elegant"
+                                    placeholder="Folder Name"
+                                    value={newFolderName}
+                                    onChange={e => setNewFolderName(e.target.value)}
+                                />
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button onClick={handleCreateFolder} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Create</button>
+                                    <button onClick={() => setShowCreateFolder(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {editingFolderId && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 50,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+                        }}
+                        onClick={() => setEditingFolderId(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass-panel"
+                            style={{ width: '100%', maxWidth: '400px', padding: '24px', position: 'relative' }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <h3 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>Edit Folder</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                <input
+                                    className="input-elegant"
+                                    placeholder="Folder Name"
+                                    value={editFolderName}
+                                    onChange={e => setEditFolderName(e.target.value)}
+                                />
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <button onClick={handleUpdateFolder} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Save</button>
+                                    <button onClick={() => setEditingFolderId(null)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+                                </div>
+                            </div>
+                        </motion.div>
                     </motion.div>
                 )}
 
                 {showMoveModal && (
                     <motion.div
-                        initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-                        className="glass-panel" style={{ padding: '16px', marginBottom: '20px', border: '1px solid var(--primary)' }}>
-                        <h4 style={{ marginBottom: '12px' }}>Move to Folder...</h4>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <button
-                                onClick={() => handleMoveTemplate(null)}
-                                className="btn-secondary"
-                                style={{ justifyContent: 'flex-start', padding: '10px' }}
-                            >
-                                <FileText size={16} /> Uncategorized (Root)
-                            </button>
-                            {folders.map(f => (
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        style={{
+                            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 50,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px'
+                        }}
+                        onClick={() => setShowMoveModal(false)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                            className="glass-panel"
+                            style={{ width: '100%', maxWidth: '400px', padding: '24px', position: 'relative', maxHeight: '80vh', overflowY: 'auto' }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <h3 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>Move to Folder...</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 <button
-                                    key={f.id}
-                                    onClick={() => handleMoveTemplate(f.id)}
+                                    onClick={() => handleMoveTemplate(null)}
                                     className="btn-secondary"
-                                    style={{ justifyContent: 'flex-start', padding: '10px' }}
+                                    style={{ justifyContent: 'flex-start', padding: '12px' }}
                                 >
-                                    <FolderOpen size={16} /> {f.name}
+                                    <FileText size={18} /> Uncategorized (Root)
                                 </button>
-                            ))}
-                            <button onClick={() => setShowMoveModal(false)} className="btn-icon" style={{ alignSelf: 'flex-end', marginTop: '8px' }}>Cancel</button>
-                        </div>
+                                {folders.map(f => (
+                                    <button
+                                        key={f.id}
+                                        onClick={() => handleMoveTemplate(f.id)}
+                                        className="btn-secondary"
+                                        style={{ justifyContent: 'flex-start', padding: '12px' }}
+                                    >
+                                        <FolderOpen size={18} /> {f.name}
+                                    </button>
+                                ))}
+                                <button onClick={() => setShowMoveModal(false)} className="btn-icon" style={{ alignSelf: 'flex-end', marginTop: '12px' }}>Cancel</button>
+                            </div>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
-
 
             {/* Default Templates Folder */}
             <div className="glass-panel" style={{ padding: '0', marginBottom: '24px', overflow: 'hidden' }}>
@@ -328,7 +439,6 @@ export default function Templates({ onStartWorkout, user }) {
                         <FolderOpen size={20} color="var(--primary)" />
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>12-Week Specialization</h3>
                     </div>
-                    {expandDefault ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 </div>
 
                 <AnimatePresence>
@@ -454,7 +564,15 @@ export default function Templates({ onStartWorkout, user }) {
                                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{folder.name}</h3>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({folderTemplates.length})</span>
                                 </div>
-                                {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <button onClick={(e) => openEditFolder(folder, e)} className="btn-icon">
+                                        <Edit2 size={16} color="var(--text-muted)" />
+                                    </button>
+                                    <button onClick={(e) => handleDeleteFolder(folder.id, e)} className="btn-icon">
+                                        <Trash2 size={16} color="#ef4444" />
+                                    </button>
+                                    {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                </div>
                             </div>
 
                             <AnimatePresence>
@@ -577,7 +695,7 @@ export default function Templates({ onStartWorkout, user }) {
 
                 {uncategorizedTemplates.length === 0 && folders.length === 0 && !loading && (
                     <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '20px', marginBottom: '40px' }}>
-                        No custom templates found. Create one above.
+                        No custom templates found. Create one above, or from the Home page.
                     </div>
                 )}
             </div>

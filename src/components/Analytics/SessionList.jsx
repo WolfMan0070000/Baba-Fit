@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, TrendingUp } from 'lucide-react';
+import { Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { api } from '../../services/api';
 
 export default function SessionList() {
@@ -40,30 +40,49 @@ export default function SessionList() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <h3 style={{ marginLeft: '8px', fontSize: '1.2rem' }}>Recent Workouts</h3>
-            {sessions.map(session => (
-                <div
-                    key={session.id}
-                    onClick={() => handleSessionClick(session.id)}
-                    className="glass-panel"
-                    style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
-                >
-                    <div>
-                        <div style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>{session.workout_name || 'Workout'}</div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{session.date}</div>
-                    </div>
+            {sessions.sort((a, b) => new Date(b.date) - new Date(a.date)).map((session, index, arr) => {
+                const prevSession = arr[index + 1];
+                const currentVol = session.total_volume || 0;
+                const prevVol = prevSession ? (prevSession.total_volume || 0) : 0;
+                const diff = currentVol - prevVol;
+                const isPositive = diff > 0;
+                const isNegative = diff < 0;
 
-                    <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--accent)' }}>
-                            <Clock size={14} />
-                            <span>{session.duration_minutes}m</span>
+                return (
+                    <div
+                        key={session.id}
+                        onClick={() => handleSessionClick(session.id)}
+                        className="glass-panel"
+                        style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                    >
+                        <div>
+                            <div style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>{session.workout_name || 'Workout'}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{session.date}</div>
+                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                Vol: {currentVol.toLocaleString()} kg
+                            </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-main)' }}>
-                            <TrendingUp size={14} />
-                            <span>{session.total_volume ? session.total_volume.toLocaleString() : 0} kg</span>
+
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                <Clock size={14} />
+                                <span>{session.duration_minutes}m</span>
+                            </div>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'flex-end',
+                                gap: '6px',
+                                fontSize: '0.85rem',
+                                color: isPositive ? '#4ade80' : isNegative ? '#ef4444' : 'var(--text-muted)'
+                            }}>
+                                {isPositive ? <TrendingUp size={14} /> : isNegative ? <TrendingDown size={14} /> : <Minus size={14} />}
+                                <span>{diff > 0 ? '+' : ''}{diff.toLocaleString()} kg</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            ))}
+                )
+            })}
 
             {/* Detail Modal */}
             {selectedSession && details && (

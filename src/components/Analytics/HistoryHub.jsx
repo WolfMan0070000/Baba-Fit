@@ -6,6 +6,7 @@ import OneRepMaxChart from './OneRepMaxChart';
 import SessionList from './SessionList';
 import BodyMetrics from './BodyMetrics';
 import PRDashboard from './PRDashboard';
+import WeeklyCoach from './WeeklyCoach';
 import { api } from '../../services/api';
 
 export default function HistoryHub({ user }) {
@@ -78,6 +79,8 @@ export default function HistoryHub({ user }) {
                     Export JSON
                 </button>
             </div>
+
+            <WeeklyCoach user={user} />
 
             <ActivityHeatmap />
 

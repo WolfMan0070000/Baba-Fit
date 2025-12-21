@@ -1,5 +1,5 @@
 import { useLanguage } from '../../context/LanguageContext';
-import { Home, Dumbbell, Utensils, Globe, User } from 'lucide-react';
+import { Home, Dumbbell, BicepsFlexed, Globe, User } from 'lucide-react';
 
 export default function Layout({ children, currentView, onViewChange, hasActiveSession }) {
     const { t, toggleLanguage, language } = useLanguage();
@@ -7,7 +7,7 @@ export default function Layout({ children, currentView, onViewChange, hasActiveS
     const navItems = [
         { id: 'dashboard', icon: Home, label: t('dashboard') },
         { id: 'templates', icon: Dumbbell, label: 'Workouts' },
-        { id: 'exercises', icon: Utensils, label: 'Library' },
+        { id: 'exercises', icon: BicepsFlexed, label: 'Exercises' },
         { id: 'history', icon: Globe, label: 'History' },
         { id: 'profile', icon: User, label: 'Profile' }
     ];

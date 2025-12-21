@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { API_BASE_URL } from '../../config';
-import { diet } from '../../data/diet';
 import { Activity, Flame, Footprints, Calendar, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { api } from '../../services/api';
+import { diet } from '../../data/diet';
 
 export default function Dashboard({ onViewChange, user }) {
     const { t } = useLanguage();
@@ -11,13 +11,7 @@ export default function Dashboard({ onViewChange, user }) {
     const [stats, setStats] = useState({ workoutsThisWeek: 0 });
 
     useEffect(() => {
-        // Fetch Profile
-        fetch(`${API_BASE_URL}/profile?userId=${user?.id || 1}`)
-            .then(res => res.json())
-            .then(data => setProfile(data.data));
-
-        // Mock stats fetch - realistically would come from backend
-        // For "Pro" feel, let's pretend we calculated it
+        api.getProfile().then(setProfile);
         setStats({ workoutsThisWeek: 2 });
     }, []);
 

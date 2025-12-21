@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Target, Scale, Ruler, Save, LogOut } from 'lucide-react';
-import { API_BASE_URL } from '../../config';
+import { api } from '../../services/api';
 
 export default function ProfileView({ user, onLogout }) {
     const [profile, setProfile] = useState({
@@ -9,22 +9,15 @@ export default function ProfileView({ user, onLogout }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch(`${API_BASE_URL}/profile?userId=${user?.id || 1}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.data) setProfile(data.data);
-                setLoading(false);
-            })
-            .catch(err => setLoading(false));
+        api.getProfile().then(data => {
+            if (data) setProfile(data);
+            setLoading(false);
+        }).catch(err => setLoading(false));
     }, []);
 
     const handleSave = async () => {
         try {
-            await fetch(`${API_BASE_URL}/profile`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...profile, user_id: user?.id || 1 })
-            });
+            await api.updateProfile(profile);
             // Show toast?
         } catch (err) {
             console.error(err);

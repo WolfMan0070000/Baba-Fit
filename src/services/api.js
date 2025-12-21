@@ -3,8 +3,14 @@ import { API_BASE_URL } from '../config';
 const API_URL = API_BASE_URL;
 
 const getUserId = () => {
-    const user = localStorage.getItem('gym_user');
-    return user ? JSON.parse(user).id : 1;
+    try {
+        const user = localStorage.getItem('gym_user');
+        if (!user) return 1;
+        const parsed = JSON.parse(user);
+        return parsed.id || 1;
+    } catch (e) {
+        return 1;
+    }
 };
 
 export const api = {
@@ -106,6 +112,67 @@ export const api = {
         } catch (error) {
             console.error('Error fetching exercises:', error);
             return [];
+        }
+    },
+
+    getPRs: async () => {
+        try {
+            const res = await fetch(`${API_URL}/history/prs?userId=${getUserId()}`);
+            const data = await res.json();
+            return data.data || [];
+        } catch (error) {
+            console.error('Error fetching PRs:', error);
+            return [];
+        }
+    },
+
+    getMetrics: async () => {
+        try {
+            const res = await fetch(`${API_URL}/metrics?userId=${getUserId()}`);
+            const data = await res.json();
+            return data.data || [];
+        } catch (error) {
+            console.error('Error fetching metrics:', error);
+            return [];
+        }
+    },
+
+    saveMetrics: async (metricData) => {
+        try {
+            const res = await fetch(`${API_URL}/metrics`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...metricData, userId: getUserId() }),
+            });
+            return await res.json();
+        } catch (error) {
+            console.error('Error saving metrics:', error);
+            throw error;
+        }
+    },
+
+    getProfile: async () => {
+        try {
+            const res = await fetch(`${API_URL}/profile?userId=${getUserId()}`);
+            const data = await res.json();
+            return data.data || null;
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+            return null;
+        }
+    },
+
+    updateProfile: async (profileData) => {
+        try {
+            const res = await fetch(`${API_URL}/profile`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...profileData, user_id: getUserId() }),
+            });
+            return await res.json();
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            throw error;
         }
     }
 };

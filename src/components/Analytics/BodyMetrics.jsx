@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Ruler, Scale, ChevronDown, ChevronUp, Save } from 'lucide-react';
-import { API_BASE_URL } from '../../config';
+import { Scale, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { api } from '../../services/api';
 import ProgressionChart from './ProgressionChart';
 
 export default function BodyMetrics() {
@@ -15,15 +15,8 @@ export default function BodyMetrics() {
     }, []);
 
     const fetchMetrics = async () => {
-        try {
-            const res = await fetch(`${API_BASE_URL}/metrics`);
-            const data = await res.json();
-            if (data.data) {
-                setMetrics(data.data.reverse()); // Newest first in UI, but reverse for chart?
-            }
-        } catch (err) {
-            console.error(err);
-        }
+        const data = await api.getMetrics();
+        setMetrics([...data].reverse());
     };
 
     const handleSave = async () => {
@@ -31,16 +24,9 @@ export default function BodyMetrics() {
             const dateStr = new Date().toISOString().split('T')[0];
             const payload = { ...todayForm, date: dateStr };
 
-            const res = await fetch(`${API_BASE_URL}/metrics`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                fetchMetrics();
-                setExpanded(false);
-            }
+            await api.saveMetrics(payload);
+            fetchMetrics();
+            setExpanded(false);
         } catch (err) {
             console.error(err);
         }
@@ -48,7 +34,7 @@ export default function BodyMetrics() {
 
     // Prepare chart data (reverse back to chronological)
     const weightData = [...metrics].reverse().map(m => ({
-        date: m.date.slice(5),
+        date: m.date ? m.date.slice(5) : '',
         value: m.weight
     })).filter(d => d.value);
 

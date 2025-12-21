@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Trophy, Award, TrendingUp } from 'lucide-react';
-import { API_BASE_URL } from '../../config';
+import { api } from '../../services/api';
 
 export default function PRDashboard() {
     const [prs, setPrs] = useState([]);
 
     useEffect(() => {
-        // Fetch All-time PRs
-        fetch(`${API_BASE_URL}/history/prs`)
-            .then(res => res.json())
-            .then(data => setPrs(data.data || []));
+        api.getPRs().then(setPrs);
     }, []);
 
     if (!prs.length) return null;

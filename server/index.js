@@ -59,6 +59,20 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(uploadsDir));
 
+// Sanitize userId
+app.use((req, res, next) => {
+    const sanitize = (val) => {
+        if (val === 'undefined' || val === 'null' || val === '') return undefined;
+        const parsed = parseInt(val);
+        return isNaN(parsed) ? (typeof val === 'number' ? val : undefined) : parsed;
+    };
+
+    if (req.query.userId) req.query.userId = sanitize(req.query.userId);
+    if (req.body && req.body.userId) req.body.userId = sanitize(req.body.userId);
+    if (req.body && req.body.user_id) req.body.user_id = sanitize(req.body.user_id);
+    next();
+});
+
 // --- Auth ---
 
 app.post('/api/login', (req, res) => {
@@ -230,7 +244,7 @@ app.get('/api/history/prs', (req, res) => {
     FROM workout_logs l
     JOIN exercises e ON l.exercise_id = e.id
     WHERE l.completed = 1 AND l.user_id = ?
-    GROUP BY e.id
+    GROUP BY e.id, e.name, e.muscle_group
     HAVING max_weight > 0
     ORDER BY max_weight DESC
     LIMIT 10

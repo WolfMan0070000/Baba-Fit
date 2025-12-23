@@ -14,24 +14,26 @@ let db;
 // SQL Converter: ? -> $1, $2, etc.
 const convertSql = (sql) => {
     if (!isPostgres) return sql;
-    let i = 1;
-    let newSql = sql.replace(/\?/g, () => `$${i++}`);
+
+    let paramCount = 1;
+    let newSql = sql.replace(/\?/g, () => `$${paramCount++}`);
 
     // Fix specific SQLite vs Postgres syntax
-    newSql = newSql.replace('INTEGER PRIMARY KEY AUTOINCREMENT', 'SERIAL PRIMARY KEY');
+    newSql = newSql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/gi, 'SERIAL PRIMARY KEY');
 
-    // Handle BOOLEAN literals and equalities
+    // Handle BOOLEAN literals
     newSql = newSql.replace(/completed\s*=\s*1/gi, 'completed = TRUE');
     newSql = newSql.replace(/completed\s*=\s*0/gi, 'completed = FALSE');
     newSql = newSql.replace(/is_guest\s*=\s*1/gi, 'is_guest = TRUE');
     newSql = newSql.replace(/is_guest\s*=\s*0/gi, 'is_guest = FALSE');
+    newSql = newSql.replace(/is_custom\s*=\s*1/gi, 'is_custom = TRUE'); // Add is_custom
 
     // Handle JOINS where one side is text and other is integer
-    // Common pattern in this app: l.exercise_id = e.id
     newSql = newSql.replace(/exercise_id\s*=\s*e\.id/gi, 'exercise_id::text = e.id::text');
 
-    // Handle RETURNING ID for Inserts if not present (simple heuristic)
-    if (newSql.trim().toUpperCase().startsWith('INSERT') && !newSql.toUpperCase().includes('RETURNING')) {
+    // Handle RETURNING ID for Inserts
+    // Check if it's an INSERT and doesn't already have RETURNING
+    if (/^\s*INSERT\s+INTO/i.test(newSql) && !/RETURNING\s+id/i.test(newSql)) {
         newSql += ' RETURNING id';
     }
 
@@ -40,10 +42,11 @@ const convertSql = (sql) => {
 
 // Param Sanitizer for Postgres
 const sanitizeParams = (params) => {
-    if (!isPostgres || !params) return params;
+    if (!params) return [];
+    if (!isPostgres) return params;
     return params.map(p => {
+        if (p === undefined) return null; // Important: undefined -> null for DB
         if (typeof p === 'string') {
-            // REMOVED integer casting to allow Postgres to infer type (prevents text=int errors)
             if (p.toLowerCase() === 'true') return true;
             if (p.toLowerCase() === 'false') return false;
         }

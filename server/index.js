@@ -8,6 +8,7 @@ import db from './db.js';
 import { exercises as seedList } from './exercise_data.js';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import morgan from 'morgan';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -57,6 +58,7 @@ const upload = multer({ storage: storage });
 
 app.use(cors());
 app.use(express.json());
+app.use(morgan('dev'));
 app.use('/uploads', express.static(uploadsDir));
 
 app.get('/health', (req, res) => {
@@ -75,6 +77,7 @@ if (fs.existsSync(distDir)) {
 app.use((req, res, next) => {
     const sanitize = (val) => {
         if (val === 'undefined' || val === 'null' || val === '') return undefined;
+        if (val === undefined || val === null) return undefined;
         const parsed = parseInt(val);
         return isNaN(parsed) ? (typeof val === 'number' ? val : undefined) : parsed;
     };
@@ -133,6 +136,10 @@ app.get('/api/logs', (req, res) => {
 // Save or Update a log
 app.post('/api/logs', (req, res) => {
     const { date, exercise_id, set_number, weight, reps, completed, set_type, rpe, userId } = req.body;
+
+    if (!date || !exercise_id || set_number === undefined) {
+        return res.status(400).json({ error: 'Missing required fields: date, exercise_id, set_number' });
+    }
 
     // Check if exists
     db.get(
@@ -193,6 +200,10 @@ app.get('/api/sessions', (req, res) => {
 // Create a new session (Finish Workout)
 app.post('/api/sessions', (req, res) => {
     const { date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, userId } = req.body;
+
+    if (!date) {
+        return res.status(400).json({ error: 'Missing required fields: date' });
+    }
 
     db.run(
         `INSERT INTO workout_sessions (date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -584,6 +595,12 @@ app.use((req, res, next) => {
     } else {
         next();
     }
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+    console.error('Unhandled Error:', err.stack);
+    res.status(500).json({ error: 'Internal Server Error', details: err.message });
 });
 
 app.listen(PORT, () => {

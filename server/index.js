@@ -233,11 +233,11 @@ app.get('/api/sessions/:id', (req, res) => {
 app.get('/api/history/heatmap', (req, res) => {
     const { userId } = req.query;
     const query = `
-    SELECT date, COUNT(*) as count 
-    FROM workout_logs 
-    WHERE completed = 1 AND user_id = ?
-    GROUP BY date 
-    ORDER BY date ASC
+    SELECT l.date, COUNT(*) as count 
+    FROM workout_logs l
+    WHERE l.completed = 1 AND l.user_id = ?
+    GROUP BY l.date 
+    ORDER BY l.date ASC
   `;
     db.all(query, [userId || 1], (err, rows) => {
         if (err) {
@@ -257,7 +257,7 @@ app.get('/api/history/prs', (req, res) => {
     JOIN exercises e ON l.exercise_id = e.id
     WHERE l.completed = 1 AND l.user_id = ?
     GROUP BY e.id, e.name, e.muscle_group
-    HAVING max_weight > 0
+    HAVING MAX(l.weight) > 0
     ORDER BY max_weight DESC
     LIMIT 10
   `;

@@ -43,7 +43,7 @@ const sanitizeParams = (params) => {
     if (!isPostgres || !params) return params;
     return params.map(p => {
         if (typeof p === 'string') {
-            if (/^\d+$/.test(p)) return parseInt(p, 10);
+            // REMOVED integer casting to allow Postgres to infer type (prevents text=int errors)
             if (p.toLowerCase() === 'true') return true;
             if (p.toLowerCase() === 'false') return false;
         }

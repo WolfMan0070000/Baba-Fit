@@ -323,7 +323,11 @@ export default function WorkoutView({ template, user, onFinish }) {
                 .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
 
             if (prevParams) {
-                return { weight: prevParams.weight, reps: prevParams.reps };
+                return {
+                    weight: prevParams.weight,
+                    reps: prevParams.reps,
+                    rpe: prevParams.rpe
+                };
             }
         }
         return null;
@@ -436,19 +440,8 @@ export default function WorkoutView({ template, user, onFinish }) {
 
                     {Array.from({ length: ex.sets }).map((_, i) => {
                         const currentData = getCurrentLog(ex.id, i + 1);
+                        // Ghost Data now STRICTLY comes from history (Previous Session)
                         let ghostData = getGhostLog(ex.id, i + 1);
-
-                        // Smart Auto-fill: Use Previous Log from THIS session if available
-                        if (i > 0) {
-                            const prevSetLog = getCurrentLog(ex.id, i);
-                            if (prevSetLog && (prevSetLog.weight || prevSetLog.reps)) {
-                                ghostData = {
-                                    weight: prevSetLog.weight,
-                                    reps: prevSetLog.reps,
-                                    rpe: prevSetLog.rpe
-                                };
-                            }
-                        }
 
                         return (
                             <SetTracker

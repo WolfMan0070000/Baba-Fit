@@ -17,13 +17,11 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
     const [rpeError, setRpeError] = useState(false);
 
     // Auto-fill from Previous Set (Smart Logic)
+    // Auto-fill from Previous Set (Smart Logic)
     useEffect(() => {
-        if (!initialData && !isUserModified && ghostData) {
-            // If no data, populate from previous set (ghostData passed as previous set data)
-            setWeight(ghostData.weight || '');
-            setReps(ghostData.reps || '');
-            setRpe(ghostData.rpe || '');
-        }
+        // Ghost Only Mode: We do NOT auto-fill state immediately.
+        // The values are shown as placeholders.
+        // User must click/focus to commit the ghost values (handled by handleFocus).
     }, [ghostData, initialData, isUserModified]);
 
     const handleFocus = (field) => {

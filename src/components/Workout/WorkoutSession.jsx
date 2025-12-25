@@ -34,16 +34,17 @@ export default function WorkoutSession({ onFinish, initialStartTime }) {
 
     return (
         <div className="glass-panel-elevated animate-slide-up" style={{
-            position: 'fixed', bottom: '110px', left: '16px', right: '16px',
+            marginTop: 'auto',
+            width: '100%',
             padding: '16px 24px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            zIndex: 1000,
+            zIndex: 10,
             border: '1px solid var(--border-active)',
             boxShadow: '0 8px 32px rgba(0,0,0,0.6)'
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ background: 'rgba(0, 242, 254, 0.1)', padding: '8px', borderRadius: '50%' }}>
-                    <Clock size={22} color="var(--primary)" />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Clock size={28} color="var(--primary)" />
                 </div>
                 <div>
                     <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Session Duration</p>

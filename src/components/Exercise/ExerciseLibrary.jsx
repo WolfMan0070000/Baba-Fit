@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Dumbbell, Filter, Video, X, Camera, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, Dumbbell, X, Camera, Pencil, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import ExerciseModal from '../Workout/ExerciseModal';
 
 export default function ExerciseLibrary() {
     const [exercises, setExercises] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [search, setSearch] = useState('');
     const [showAdd, setShowAdd] = useState(false);
-    const [videoUrl, setVideoUrl] = useState(null);
+    const [selectedExercise, setSelectedExercise] = useState(null);
 
     // New Exercise Form
     const [newEx, setNewEx] = useState({ name: '', muscle_group: 'Chest', equipment: 'Barbell', type: 'weight_reps', video_url: '', image_url: '' });
@@ -76,13 +77,6 @@ export default function ExerciseLibrary() {
         } catch (err) {
             console.error(err);
         }
-    };
-
-    const getEmbedUrl = (url) => {
-        if (!url) return null;
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}` : null;
     };
 
     return (
@@ -206,28 +200,12 @@ export default function ExerciseLibrary() {
                 </div>
             )}
 
-            {/* Video Modal */}
-            {videoUrl && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                    <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '16px', position: 'relative' }}>
-                        <button
-                            onClick={() => setVideoUrl(null)}
-                            style={{ position: 'absolute', top: '-40px', right: 0, color: 'white', background: 'none', border: 'none', cursor: 'pointer' }}
-                        >
-                            <X size={32} />
-                        </button>
-                        <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '8px', background: 'black' }}>
-                            <iframe
-                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-                                src={getEmbedUrl(videoUrl)}
-                                title="Exercise Video"
-                                frameBorder="0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                            ></iframe>
-                        </div>
-                    </div>
-                </div>
+            {/* Exercise Details Modal */}
+            {selectedExercise && (
+                <ExerciseModal
+                    exercise={selectedExercise}
+                    onClose={() => setSelectedExercise(null)}
+                />
             )}
 
             {/* List */}
@@ -241,7 +219,7 @@ export default function ExerciseLibrary() {
                         alignItems: 'center',
                         justifyContent: 'space-between'
                     }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, cursor: 'pointer' }} onClick={() => handleEdit(ex)}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, cursor: 'pointer' }} onClick={() => setSelectedExercise(ex)}>
                             <div style={{
                                 width: '40px', height: '40px', borderRadius: '8px',
                                 background: 'rgba(0,229,255,0.1)', color: 'var(--primary)',
@@ -260,27 +238,14 @@ export default function ExerciseLibrary() {
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            {ex.video_url && (
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setVideoUrl(ex.video_url); }}
-                                    style={{
-                                        padding: '8px', borderRadius: '50%',
-                                        background: 'rgba(255,0,0,0.15)', color: '#ff4444',
-                                        border: '1px solid rgba(255,0,0,0.2)', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                    }}
-                                >
-                                    <Video size={18} />
-                                </button>
-                            )}
                             <button
-                                onClick={(e) => handleEdit(ex)}
+                                onClick={(e) => { e.stopPropagation(); handleEdit(ex); }}
                                 style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
                             >
                                 <Pencil size={18} />
                             </button>
                             <button
-                                onClick={(e) => handleDelete(ex.id, e)}
+                                onClick={(e) => { handleDelete(ex.id, e); }}
                                 style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
                             >
                                 <Trash2 size={18} />

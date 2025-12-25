@@ -13,6 +13,27 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
     const [rpe, setRpe] = useState(initialData?.rpe || '');
 
     const [isSaved, setIsSaved] = useState(false);
+    const [isUserModified, setIsUserModified] = useState(false);
+    const [rpeError, setRpeError] = useState(false);
+
+    // Auto-fill from Previous Set (Smart Logic)
+    useEffect(() => {
+        if (!initialData && !isUserModified && ghostData) {
+            // If no data, populate from previous set (ghostData passed as previous set data)
+            setWeight(ghostData.weight || '');
+            setReps(ghostData.reps || '');
+            setRpe(ghostData.rpe || '');
+        }
+    }, [ghostData, initialData, isUserModified]);
+
+    const handleFocus = (field) => {
+        // If empty and ghostData exists, commit it on click
+        if (!isUserModified && ghostData) {
+            if (field === 'weight' && !weight && ghostData.weight) setWeight(ghostData.weight);
+            if (field === 'reps' && !reps && ghostData.reps) setReps(ghostData.reps);
+            if (field === 'rpe' && !rpe && ghostData.rpe) setRpe(ghostData.rpe);
+        }
+    };
 
     useEffect(() => {
         if (initialData) {
@@ -22,14 +43,45 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
             setSetType(initialData.set_type || 'normal');
             setRpe(initialData.rpe || '');
         } else {
-            // Logs cleared (New Session), reset fields
-            setWeight('');
-            setReps('');
-            setCompleted(false);
-            setSetType('normal');
-            setRpe('');
+            // Logs cleared (New Session), reset fields but respect auto-fill if not explicitly cleared
+            if (!ghostData) {
+                setWeight('');
+                setReps('');
+                setCompleted(false);
+                setSetType('normal');
+                setRpe('');
+            }
         }
     }, [initialData]);
+
+    const handleChange = (field, value) => {
+        setIsUserModified(true);
+        if (field === 'weight') setWeight(value);
+        if (field === 'reps') setReps(value);
+
+        if (field === 'rpe') {
+            if (Number(value) > 10) {
+                setRpeError(true);
+                setRpe(value);
+                return;
+            }
+            setRpeError(false);
+            setRpe(value);
+        }
+
+        // Debounced Save / Immediate Update for Persistence
+        const newData = {
+            weight: field === 'weight' ? value : weight,
+            reps: field === 'reps' ? value : reps,
+            completed: field === 'completed' ? value : completed,
+            set_type: setType,
+            rpe: field === 'rpe' ? value : rpe
+        };
+
+        // Don't mark completed unless explicitly done or both filled? 
+        // We'll keep completed as explicit action or blur
+        onSave(newData);
+    };
 
     const handleSave = () => {
         const isComplete = !!(weight && reps);
@@ -91,7 +143,8 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                         type="number"
                         placeholder={ghostWeight ? `${ghostWeight} kg` : 'kg'}
                         value={weight}
-                        onChange={(e) => setWeight(e.target.value)}
+                        onChange={(e) => handleChange('weight', e.target.value)}
+                        onFocus={() => handleFocus('weight')}
                         onBlur={handleSave}
                         style={{
                             width: '100%',
@@ -111,7 +164,8 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                         type="number"
                         placeholder={ghostReps}
                         value={reps}
-                        onChange={(e) => setReps(e.target.value)}
+                        onChange={(e) => handleChange('reps', e.target.value)}
+                        onFocus={() => handleFocus('reps')}
                         onBlur={handleSave}
                         style={{
                             width: '100%',
@@ -129,21 +183,36 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                 <div style={{ position: 'relative' }}>
                     <input
                         type="number"
-                        placeholder="RPE"
+                        placeholder={ghostData?.rpe || "RPE"}
                         value={rpe}
-                        onChange={(e) => setRpe(e.target.value)}
+                        onChange={(e) => handleChange('rpe', e.target.value)}
+                        onFocus={() => handleFocus('rpe')}
                         onBlur={handleSave}
                         style={{
                             width: '100%',
                             padding: '8px',
                             background: 'rgba(0,0,0,0.3)',
-                            border: '1px solid var(--border-light)',
+                            border: rpeError ? '1px solid #ef4444' : '1px solid var(--border-light)',
                             borderRadius: '8px',
-                            color: 'var(--text-secondary)',
+                            color: rpeError ? '#ef4444' : 'var(--text-secondary)',
                             textAlign: 'center',
                             fontSize: '0.85rem'
                         }}
                     />
+                    {rpeError && (
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '-18px',
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            fontSize: '0.6rem',
+                            color: '#ef4444',
+                            whiteSpace: 'nowrap',
+                            pointerEvents: 'none'
+                        }}>
+                            Max 10
+                        </div>
+                    )}
                 </div>
 
                 {/* Save Button */}

@@ -7,12 +7,32 @@ import { diet } from '../../data/diet';
 
 export default function Dashboard({ onViewChange, user }) {
     const { t } = useLanguage();
-    const [profile, setProfile] = useState(null);
+    const [profile, setProfile] = useState(user || null);
     const [stats, setStats] = useState({ workoutsThisWeek: 0 });
 
     useEffect(() => {
-        api.getProfile().then(setProfile);
-        setStats({ workoutsThisWeek: 2 });
+        // Fetch Profile
+        api.getProfile().then(data => {
+            if (data) setProfile(prev => ({ ...prev, ...data }));
+        });
+
+        // Calculate Weekly Stats (Real Data)
+        const fetchStats = async () => {
+            try {
+                const sessions = await api.getSessions();
+                if (sessions && Array.isArray(sessions)) {
+                    const today = new Date();
+                    const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay())); // Sunday
+                    startOfWeek.setHours(0, 0, 0, 0);
+
+                    const count = sessions.filter(s => new Date(s.date) >= startOfWeek).length;
+                    setStats({ workoutsThisWeek: count });
+                }
+            } catch (err) {
+                console.error("Failed to load stats", err);
+            }
+        };
+        fetchStats();
     }, []);
 
     const container = {
@@ -98,14 +118,14 @@ export default function Dashboard({ onViewChange, user }) {
                         <Flame size={20} color="var(--accent)" />
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Daily Cals</span>
                     </div>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{diet.goals.calories}</span>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{profile?.daily_calories || diet.goals.calories}</span>
                 </div>
                 <div className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Footprints size={20} color="#10b981" />
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Steps</span>
                     </div>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{diet.goals.steps}</span>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>{profile?.daily_steps || diet.goals.steps}</span>
                 </div>
             </motion.div>
 

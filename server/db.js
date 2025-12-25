@@ -244,14 +244,27 @@ function initDb() {
 function seedExercises() {
     db.get("SELECT count(*) as count FROM exercises", [], (err, row) => {
         if (err) return;
-        if (row && (row.count > 10 || row.count === '10')) return;
 
-        console.log('Seeding exercises...');
-        const stmt = db.prepare("INSERT INTO exercises (name, muscle_group, equipment) VALUES (?, ?, ?)");
+        console.log('Seeding/Updating exercises...');
+        const insertStmt = db.prepare("INSERT INTO exercises (name, muscle_group, equipment, image_url, video_url) VALUES (?, ?, ?, ?, ?)");
+        const updateStmt = db.prepare("UPDATE exercises SET image_url = ?, video_url = ? WHERE name = ?");
+
         SEED_EXERCISES.forEach(ex => {
-            stmt.run([ex.name, ex.muscle, ex.eq]);
+            // Try to update first to ensure existing records get images
+            db.get("SELECT id FROM exercises WHERE name = ?", [ex.name], (err, row) => {
+                if (row) {
+                    if (ex.image_url || ex.video_url) {
+                        updateStmt.run([ex.image_url, ex.video_url, ex.name]);
+                    }
+                } else {
+                    insertStmt.run([ex.name, ex.muscle, ex.eq, ex.image_url, ex.video_url]);
+                }
+            });
         });
-        if (stmt.finalize) stmt.finalize();
+
+        // Finalize isn't strictly necessary for the one-off async loop here but good practice if we could wait. 
+        // Since sqlite3 is async, we can't easily finalize immediately after loop. 
+        // We'll let the process exit handle it or rely on garbage collection for this simple seed script.
     });
 }
 

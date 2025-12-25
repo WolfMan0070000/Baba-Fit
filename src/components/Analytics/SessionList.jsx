@@ -1,20 +1,51 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { api } from '../../services/api';
+import { program } from '../../data/program';
 
 export default function SessionList() {
     const [sessions, setSessions] = useState([]);
     const [selectedSession, setSelectedSession] = useState(null);
     const [details, setDetails] = useState(null);
+    const [exercises, setExercises] = useState([]);
+
+    // Create a fallback map of ID -> Name from the static program data
+    const programExerciseMap = useMemo(() => {
+        const map = {};
+        Object.values(program.days).forEach(day => {
+            day.exercises.forEach(ex => {
+                map[ex.id] = ex.name_en; // Default to English name
+            });
+        });
+        return map;
+    }, []);
 
     useEffect(() => {
-        api.getSessions().then(data => setSessions(data));
+        Promise.all([
+            api.getSessions(),
+            api.getExercises()
+        ]).then(([sessionsData, exercisesData]) => {
+            setSessions(sessionsData);
+            setExercises(exercisesData);
+        });
     }, []);
 
     const handleSessionClick = async (id) => {
         const data = await api.getSessionDetails(id);
         setDetails(data);
         setSelectedSession(id);
+    };
+
+    const getExerciseName = (id) => {
+        // 1. Try API list
+        const ex = exercises.find(e => e.id === id || e.id === String(id) || String(e.id) === String(id));
+        if (ex) return ex.name;
+
+        // 2. Try static program fallback
+        if (programExerciseMap[id]) return programExerciseMap[id];
+
+        // 3. Unknown
+        return `Unknown Exercise (ID: ${id})`;
     };
 
     const closeModal = () => {
@@ -24,7 +55,8 @@ export default function SessionList() {
 
     // Group logs by exercise for display
     const groupedLogs = details ? details.logs.reduce((acc, log) => {
-        const name = log.exercise_name || `Unknown Exercise (ID: ${log.exercise_id})`;
+        // Use log.exercise_name if available, otherwise lookup from exercises list or fallback
+        const name = log.exercise_name || getExerciseName(log.exercise_id);
         if (!acc[name]) acc[name] = [];
         acc[name].push(log);
         return acc;
@@ -54,31 +86,40 @@ export default function SessionList() {
                         key={session.id}
                         onClick={() => handleSessionClick(session.id)}
                         className="glass-panel"
-                        style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                        style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', cursor: 'pointer', borderLeft: '4px solid var(--primary)' }}
                     >
-                        <div>
-                            <div style={{ fontSize: '1rem', fontWeight: 600, color: '#fff' }}>{session.workout_name || 'Workout'}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{session.date}</div>
-                            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                                Vol: {currentVol.toLocaleString()} kg
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{session.workout_name || 'Workout'}</div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <Clock size={14} />
+                                    {session.date} • {session.duration_minutes} min
+                                </div>
                             </div>
-                        </div>
 
-                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                <Clock size={14} />
-                                <span>{session.duration_minutes}m</span>
-                            </div>
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'flex-end',
                                 gap: '6px',
+                                background: isPositive ? 'rgba(74, 222, 128, 0.1)' : isNegative ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255,255,255,0.05)',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
                                 fontSize: '0.85rem',
                                 color: isPositive ? '#4ade80' : isNegative ? '#ef4444' : 'var(--text-muted)'
                             }}>
                                 {isPositive ? <TrendingUp size={14} /> : isNegative ? <TrendingDown size={14} /> : <Minus size={14} />}
-                                <span>{diff > 0 ? '+' : ''}{diff.toLocaleString()} kg</span>
+                                <span>{diff > 0 ? '+' : ''}{diff.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Volume</span>
+                                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{currentVol.toLocaleString()} kg</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Calories</span>
+                                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{session.calories_burned || 0} kcal</span>
                             </div>
                         </div>
                     </div>
@@ -116,8 +157,8 @@ export default function SessionList() {
                                                             background: 'rgba(255,255,255,0.1)', fontSize: '0.75rem'
                                                         }}>{log.set_type === 'warmup' ? 'W' : (log.set_number || idx + 1)}</span>
                                                     </td>
-                                                    <td style={{ textAlign: 'center', color: 'white' }}>{log.weight}</td>
-                                                    <td style={{ textAlign: 'center', color: 'white' }}>{log.reps}</td>
+                                                    <td style={{ textAlign: 'center', color: 'white' }}>{log.weight || '-'}</td>
+                                                    <td style={{ textAlign: 'center', color: 'white' }}>{log.reps || '-'}</td>
                                                     <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{log.rpe || '-'}</td>
                                                 </tr>
                                             ))}

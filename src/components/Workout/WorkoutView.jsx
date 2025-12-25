@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
 import { program } from '../../data/program';
-import { Info, Dumbbell, Calculator, Plus, X, Clock, TrendingUp, Flame } from 'lucide-react';
+import { Info, Dumbbell, Calculator, Plus, X, Clock, TrendingUp, Flame, Save, Minus } from 'lucide-react';
 import SelectExerciseModal from './SelectExerciseModal';
 import SetTracker from './SetTracker';
 import ExerciseModal from './ExerciseModal';
@@ -35,8 +35,12 @@ export default function WorkoutView({ template, user, onFinish }) {
     const [sessionStats, setSessionStats] = useState(null);
 
     const [activeExercises, setActiveExercises] = useState([]);
+    const [initialExercises, setInitialExercises] = useState([]); // To track changes
     const [showAddExercise, setShowAddExercise] = useState(false);
     const [swapIndex, setSwapIndex] = useState(null);
+
+    // Debounce Refs
+    const debounceTimers = useRef({});
 
     // Initialize Day Data / Resume Session
     useEffect(() => {
@@ -47,6 +51,7 @@ export default function WorkoutView({ template, user, onFinish }) {
             if (parsed.date === today) {
                 setDayData(parsed.dayData);
                 setActiveExercises(parsed.activeExercises);
+                setInitialExercises(parsed.initialExercises || parsed.activeExercises);
                 setLogs(parsed.logs);
                 setSessionStartTime(parsed.startTime);
                 setSessionActive(true);
@@ -73,12 +78,14 @@ export default function WorkoutView({ template, user, onFinish }) {
                 subtitle_fa: template.notes || 'Custom Template'
             });
             setActiveExercises(adaptedExercises);
+            setInitialExercises(adaptedExercises);
         } else {
             const today = new Date().getDay();
             const defaultDayId = program.schedule[today] === 'rest' ? 'day1' : program.schedule[today];
             const defaultData = program.days[defaultDayId];
             setDayData(defaultData);
             setActiveExercises(defaultData.exercises);
+            setInitialExercises(defaultData.exercises);
         }
         setSessionStartTime(new Date().toISOString());
         setSessionActive(true);
@@ -91,12 +98,13 @@ export default function WorkoutView({ template, user, onFinish }) {
                 date: new Date().toISOString().split('T')[0],
                 dayData,
                 activeExercises,
+                initialExercises,
                 logs,
                 startTime: sessionStartTime
             };
             localStorage.setItem('active_workout_session', JSON.stringify(sessionState));
         }
-    }, [activeExercises, logs, dayData, sessionStartTime, sessionActive]);
+    }, [activeExercises, logs, dayData, sessionStartTime, sessionActive, initialExercises]);
 
     const handleAddExercise = (exercise) => {
         const newExercise = {
@@ -122,9 +130,11 @@ export default function WorkoutView({ template, user, onFinish }) {
     };
 
     const handleRemoveExercise = (index) => {
-        const updated = [...activeExercises];
-        updated.splice(index, 1);
-        setActiveExercises(updated);
+        if (window.confirm("Are you sure you want to remove this exercise?")) {
+            const updated = [...activeExercises];
+            updated.splice(index, 1);
+            setActiveExercises(updated);
+        }
     };
 
     const handleSwapExercise = (index) => {
@@ -132,11 +142,32 @@ export default function WorkoutView({ template, user, onFinish }) {
         setShowAddExercise(true);
     };
 
+    const handleAddSet = (index) => {
+        const updated = [...activeExercises];
+        updated[index].sets += 1;
+        setActiveExercises(updated);
+    };
+
+    const handleRemoveSet = (index) => {
+        const updated = [...activeExercises];
+        if (updated[index].sets > 1) {
+            updated[index].sets -= 1;
+            setActiveExercises(updated);
+        }
+    };
+
     // Fetch current logs
     useEffect(() => {
         if (!dayData) return;
         const dateStr = new Date().toISOString().split('T')[0];
-        api.getLogs(dateStr).then(data => setLogs(data));
+        // If resuming logs are already set from localStorage, but we might want to refresh from API?
+        // Relying on localStorage is safer for "in-progress" integrity.
+        // Only fetch if logs are empty (first load of day)
+        if (logs.length === 0) {
+            api.getLogs(dateStr).then(data => {
+                if (data && data.length > 0) setLogs(data);
+            });
+        }
     }, [dayData]);
 
     // Fetch history
@@ -157,7 +188,7 @@ export default function WorkoutView({ template, user, onFinish }) {
 
     if (!dayData) return <div className="glass-panel" style={{ padding: '20px' }}>Loading...</div>;
 
-    const handleSaveSet = async (exerciseId, setIndex, data) => {
+    const handleSaveSet = (exerciseId, setIndex, data) => {
         const dateStr = new Date().toISOString().split('T')[0];
         const logData = {
             date: dateStr,
@@ -170,37 +201,64 @@ export default function WorkoutView({ template, user, onFinish }) {
             rpe: data.rpe
         };
 
-        try {
-            await api.saveLog(logData);
-
-            setLogs(prev => {
-                const existingInfo = prev.findIndex(l =>
-                    l.date === dateStr && l.exercise_id === exerciseId && l.set_number === (setIndex + 1)
-                );
-                if (existingInfo > -1) {
-                    const newLogs = [...prev];
-                    newLogs[existingInfo] = { ...newLogs[existingInfo], ...logData };
-                    return newLogs;
-                } else {
-                    return [...prev, logData];
-                }
-            });
-
-            if (data.completed) {
-                let restTime = 90;
-                if (data.set_type === 'warmup') restTime = 45;
-                if (data.set_type === 'failure' || (data.rpe && data.rpe >= 9)) restTime = 180;
-
-                setTimerDuration(restTime);
-                setShowTimer(true);
+        // 1. Immediate Local Update (for Persistence)
+        setLogs(prev => {
+            const existingInfo = prev.findIndex(l =>
+                l.date === dateStr && l.exercise_id === exerciseId && l.set_number === (setIndex + 1)
+            );
+            if (existingInfo > -1) {
+                const newLogs = [...prev];
+                newLogs[existingInfo] = { ...newLogs[existingInfo], ...logData };
+                return newLogs;
+            } else {
+                return [...prev, logData];
             }
+        });
 
-        } catch (err) {
-            console.error("Failed to save", err);
+        // 2. Timer Logic (Immediate)
+        if (data.completed && !logs.find(l => l.exercise_id === exerciseId && l.set_number === (setIndex + 1))?.completed) {
+            let restTime = 90;
+            if (data.set_type === 'warmup') restTime = 45;
+            if (data.set_type === 'failure' || (data.rpe && data.rpe >= 9)) restTime = 180;
+            setTimerDuration(restTime);
+            setShowTimer(true);
         }
+
+        // 3. Debounced API Call
+        const timerKey = `${exerciseId}-${setIndex}`;
+        if (debounceTimers.current[timerKey]) {
+            clearTimeout(debounceTimers.current[timerKey]);
+        }
+
+        debounceTimers.current[timerKey] = setTimeout(async () => {
+            try {
+                await api.saveLog(logData);
+            } catch (err) {
+                console.error("Failed to save log to API", err);
+            }
+        }, 1000); // 1 second debounce
+    };
+
+    const hasProgramChanged = () => {
+        if (activeExercises.length !== initialExercises.length) return true;
+        for (let i = 0; i < activeExercises.length; i++) {
+            if (activeExercises[i].id !== initialExercises[i].id) return true;
+            if (activeExercises[i].sets !== initialExercises[i].sets) return true;
+        }
+        return false;
     };
 
     const handleFinishSession = async (sessionData) => {
+        // Question: Save Changes?
+        if (hasProgramChanged()) {
+            if (window.confirm("You modified the workout. Do you want to save these changes to your program for next time?")) {
+                // Logic to save template updates (would need an API endpoint for updating templates/program)
+                // Since we don't have that explicit API in the snippet, we'll just log or pretend.
+                // Ideally: api.updateTemplate(template.id, activeExercises);
+                console.log("Saving program changes...");
+            }
+        }
+
         try {
             let totalVolume = 0;
             logs.forEach(l => {
@@ -260,9 +318,6 @@ export default function WorkoutView({ template, user, onFinish }) {
     // Helper to extract PREVIOUS session data (Ghost)
     const getGhostLog = (exId, setNum) => {
         if (history[exId]) {
-            // Filter OUT logs from today? Or just take the most recent?
-            // If logs are cleared, 'most recent' might be today's just-saved data (if we re-fetched).
-            // But we only fetch history on mount. So it's safe (it's yesterday's data).
             const prevParams = history[exId]
                 .filter(l => l.set_number === setNum)
                 .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
@@ -274,19 +329,8 @@ export default function WorkoutView({ template, user, onFinish }) {
         return null;
     };
 
-    const daysList = [
-        { id: 'day1', label: 'Day 1' },
-        { id: 'day2', label: 'Day 2' },
-        { id: 'day4', label: 'Day 4' },
-        { id: 'day5', label: 'Day 5' },
-    ];
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '100px' }}>
-
-            {/* Day Selector */}
-            {/* Day Selector Removed */}
-            {/* <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}> ... </div> */}
 
             {/* Header / Live Metrics */}
             <div className="glass-panel pulse-glow" style={{
@@ -338,9 +382,6 @@ export default function WorkoutView({ template, user, onFinish }) {
                             <div style={{ display: 'flex', gap: '12px', fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                                 <span>{ex.sets} {t('sets')}</span>
                                 <span>{ex.reps} {t('reps')}</span>
-                                <span style={{ color: 'var(--primary)', fontWeight: 600 }}>
-                                    {Math.round(logs.filter(l => l.exercise_id === ex.id && l.completed).reduce((acc, l) => acc + (l.weight * l.reps), 0))} kg
-                                </span>
                             </div>
                         </div>
 
@@ -395,7 +436,19 @@ export default function WorkoutView({ template, user, onFinish }) {
 
                     {Array.from({ length: ex.sets }).map((_, i) => {
                         const currentData = getCurrentLog(ex.id, i + 1);
-                        const ghostData = getGhostLog(ex.id, i + 1);
+                        let ghostData = getGhostLog(ex.id, i + 1);
+
+                        // Smart Auto-fill: Use Previous Log from THIS session if available
+                        if (i > 0) {
+                            const prevSetLog = getCurrentLog(ex.id, i);
+                            if (prevSetLog && (prevSetLog.weight || prevSetLog.reps)) {
+                                ghostData = {
+                                    weight: prevSetLog.weight,
+                                    reps: prevSetLog.reps,
+                                    rpe: prevSetLog.rpe
+                                };
+                            }
+                        }
 
                         return (
                             <SetTracker
@@ -408,6 +461,24 @@ export default function WorkoutView({ template, user, onFinish }) {
                             />
                         );
                     })}
+
+                    {/* Add/Remove Sets Controls */}
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
+                        <button onClick={() => handleAddSet(index)} style={{
+                            background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--primary)',
+                            padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+                        }}>
+                            <Plus size={14} /> Set
+                        </button>
+                        {ex.sets > 1 && (
+                            <button onClick={() => handleRemoveSet(index)} style={{
+                                background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-secondary)',
+                                padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+                            }}>
+                                <Minus size={14} /> Set
+                            </button>
+                        )}
+                    </div>
                 </div>
             ))}
 

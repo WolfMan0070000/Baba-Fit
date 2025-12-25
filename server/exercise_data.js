@@ -1,9 +1,9 @@
 export const exercises = [
     // Chest
-    { name: 'Barbell Bench Press', muscle: 'Chest', eq: 'Barbell' },
+    { name: 'Barbell Bench Press', muscle: 'Chest', eq: 'Barbell', image_url: '/images/bench_press.png' },
     { name: 'Incline Barbell Bench Press', muscle: 'Chest', eq: 'Barbell' },
     { name: 'Decline Barbell Bench Press', muscle: 'Chest', eq: 'Barbell' },
-    { name: 'Dumbbell Bench Press', muscle: 'Chest', eq: 'Dumbbell' },
+    { name: 'Dumbbell Bench Press', muscle: 'Chest', eq: 'Dumbbell', image_url: '/images/dumbbell_press.png' },
     { name: 'Incline Dumbbell Press', muscle: 'Chest', eq: 'Dumbbell' },
     { name: 'Decline Dumbbell Press', muscle: 'Chest', eq: 'Dumbbell' },
     { name: 'Chest Fly', muscle: 'Chest', eq: 'Dumbbell' },
@@ -22,15 +22,15 @@ export const exercises = [
     { name: 'Svend Press', muscle: 'Chest', eq: 'Dumbbell' },
 
     // Back
-    { name: 'Deadlift', muscle: 'Back', eq: 'Barbell' },
+    { name: 'Deadlift', muscle: 'Back', eq: 'Barbell', image_url: '/images/deadlift.png' },
     { name: 'Sumo Deadlift', muscle: 'Back', eq: 'Barbell' },
-    { name: 'Pull Up', muscle: 'Back', eq: 'Bodyweight' },
+    { name: 'Pull Up', muscle: 'Back', eq: 'Bodyweight', image_url: '/images/pull_up.png' },
     { name: 'Weighted Pull Up', muscle: 'Back', eq: 'Weighted' },
     { name: 'Chin Up', muscle: 'Back', eq: 'Bodyweight' },
-    { name: 'Lat Pulldown', muscle: 'Back', eq: 'Cable' },
+    { name: 'Lat Pulldown', muscle: 'Back', eq: 'Cable', image_url: '/images/lat_pulldown.png' },
     { name: 'Close Grip Lat Pulldown', muscle: 'Back', eq: 'Cable' },
     { name: 'V-Bar Lat Pulldown', muscle: 'Back', eq: 'Cable' },
-    { name: 'Bent Over Barbell Row', muscle: 'Back', eq: 'Barbell' },
+    { name: 'Bent Over Barbell Row', muscle: 'Back', eq: 'Barbell', image_url: '/images/barbell_row.png' },
     { name: 'Pendlay Row', muscle: 'Back', eq: 'Barbell' },
     { name: 'Dumbbell Row', muscle: 'Back', eq: 'Dumbbell' },
     { name: 'Seated Cable Row', muscle: 'Back', eq: 'Cable' },
@@ -47,7 +47,7 @@ export const exercises = [
     { name: 'Reverse Fly', muscle: 'Back', eq: 'Dumbbell' },
 
     // Legs - Quads
-    { name: 'Barbell Back Squat', muscle: 'Quads', eq: 'Barbell' },
+    { name: 'Barbell Back Squat', muscle: 'Quads', eq: 'Barbell', image_url: '/images/squat.png' },
     { name: 'Barbell Front Squat', muscle: 'Quads', eq: 'Barbell' },
     { name: 'Goblet Squat', muscle: 'Quads', eq: 'Dumbbell' },
     { name: 'Hack Squat', muscle: 'Quads', eq: 'Machine' },
@@ -79,7 +79,7 @@ export const exercises = [
     { name: 'Leg Press Calf Raise', muscle: 'Calves', eq: 'Machine' },
 
     // Shoulders
-    { name: 'Overhead Press', muscle: 'Shoulders', eq: 'Barbell' },
+    { name: 'Overhead Press', muscle: 'Shoulders', eq: 'Barbell', image_url: '/images/overhead_press.png' },
     { name: 'Push Press', muscle: 'Shoulders', eq: 'Barbell' },
     { name: 'Dumbbell Shoulder Press', muscle: 'Shoulders', eq: 'Dumbbell' },
     { name: 'Arnold Press', muscle: 'Shoulders', eq: 'Dumbbell' },

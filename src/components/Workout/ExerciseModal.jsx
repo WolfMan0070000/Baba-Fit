@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, PlayCircle, Loader2, Camera } from 'lucide-react';
+import { X, PlayCircle, Loader2, Camera, Dumbbell } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -8,6 +8,7 @@ export default function ExerciseModal({ exercise, onClose }) {
     const [videoUrl, setVideoUrl] = useState(exercise?.video_url || null);
     const [imageUrl, setImageUrl] = useState(exercise?.image_url || null);
     const [loading, setLoading] = useState(!exercise?.video_url && !exercise?.image_url);
+    const [isPlaying, setIsPlaying] = useState(false);
 
     useEffect(() => {
         if (!exercise?.video_url && !exercise?.image_url) {
@@ -86,26 +87,51 @@ export default function ExerciseModal({ exercise, onClose }) {
                             <Loader2 size={32} className="rotate" color="var(--primary)" />
                             <p style={{ color: 'var(--text-muted)', marginTop: '8px', fontSize: '0.8rem' }}>Loading details...</p>
                         </div>
-                    ) : imageUrl ? (
-                        <div style={{ width: '100%', height: '100%', padding: '0', position: 'relative' }}>
-                            <img
-                                src={imageUrl}
-                                alt={exercise.name_en || exercise.name}
-                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                            />
-                        </div>
-                    ) : embedUrl ? (
-                        <iframe
-                            style={{ width: '100%', height: '100%', border: 'none' }}
-                            src={embedUrl}
-                            title="YouTube video player"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        ></iframe>
                     ) : (
-                        <div style={{ textAlign: 'center', padding: '20px' }}>
-                            <PlayCircle size={48} color="rgba(255,255,255,0.1)" />
-                            <p style={{ color: 'var(--text-muted)', marginTop: '12px' }}>No demonstration available</p>
+                        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                            {/* If video is playing, show iframe */}
+                            {isPlaying && embedUrl ? (
+                                <iframe
+                                    style={{ width: '100%', height: '100%', border: 'none' }}
+                                    src={embedUrl + "?autoplay=1"}
+                                    title="YouTube video player"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                ></iframe>
+                            ) : (
+                                /* Otherwise show Image (or placeholder) + Play Button Overlay */
+                                <>
+                                    {imageUrl ? (
+                                        <img
+                                            src={imageUrl}
+                                            alt={exercise.name_en || exercise.name}
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                        />
+                                    ) : (
+                                        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                            <Dumbbell size={48} color="rgba(255,255,255,0.1)" />
+                                            <p style={{ color: 'var(--text-muted)', marginTop: '12px' }}>No image available</p>
+                                        </div>
+                                    )}
+
+                                    {/* Play Overlay */}
+                                    {embedUrl && (
+                                        <div
+                                            onClick={() => setIsPlaying(true)}
+                                            style={{
+                                                position: 'absolute', inset: 0,
+                                                background: 'rgba(0,0,0,0)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            className="hover-overlay"
+                                        >
+                                            <PlayCircle size={72} strokeWidth={1.5} color="rgba(255,255,255,0.5)" style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))' }} />
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                     )}
 

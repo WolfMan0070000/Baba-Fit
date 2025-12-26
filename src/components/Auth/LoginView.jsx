@@ -39,6 +39,8 @@ export default function LoginView({ onLogin, onGuest }) {
             justifyContent: 'center',
             alignItems: 'center',
             padding: '24px',
+            paddingTop: 'max(24px, env(safe-area-inset-top, 24px))',
+            paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
             background: 'var(--bg-app)'
         }}>
             <h1 className="text-gradient" style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '8px' }}>FAT SHREDDER</h1>

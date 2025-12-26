@@ -264,11 +264,29 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
         );
     }
 
-    const uncategorizedTemplates = templates.filter(t => !t.folder_id && !t.folderId);
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.05
+            }
+        }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+    };
 
     return (
-        <div style={{ padding: '16px', paddingBottom: '100px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            style={{ padding: '16px', paddingBottom: '100px' }}
+        >
+            <motion.div variants={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>Workouts</h2>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button
@@ -298,7 +316,7 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                         <Plus size={24} />
                     </button>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Modals */}
             <AnimatePresence>
@@ -440,7 +458,7 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
             </AnimatePresence>
 
             {/* Default Templates Folder */}
-            <div className="glass-panel" style={{ padding: '0', marginBottom: '24px', overflow: 'hidden' }}>
+            <motion.div variants={item} className="glass-panel" style={{ padding: '0', marginBottom: '24px', overflow: 'hidden' }}>
                 <div
                     onClick={() => setExpandDefault(!expandDefault)}
                     style={{
@@ -550,12 +568,12 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </div>
+            </motion.div>
 
             {/* Custom Templates */}
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-secondary)' }}>
+            <motion.h3 variants={item} style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-secondary)' }}>
                 Your Templates
-            </h3>
+            </motion.h3>
 
             {/* User Folders */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -564,7 +582,7 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                     const isExpanded = expandedFolders[folder.id];
 
                     return (
-                        <div key={folder.id} className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
+                        <motion.div key={folder.id} variants={item} className="glass-panel" style={{ padding: '0', overflow: 'hidden' }}>
                             <div
                                 onClick={() => toggleFolder(folder.id)}
                                 style={{
@@ -656,13 +674,13 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                     </motion.div>
                                 )}
                             </AnimatePresence>
-                        </div>
+                        </motion.div>
                     );
                 })}
 
                 {/* Uncategorized Templates */}
                 {uncategorizedTemplates.map(t => (
-                    <div key={t.id} className="glass-panel" style={{ padding: '16px' }}>
+                    <motion.div key={t.id} variants={item} className="glass-panel" style={{ padding: '16px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{
@@ -707,7 +725,7 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                 </button>
                             )}
                         </div>
-                    </div>
+                    </motion.div>
                 ))}
 
                 {uncategorizedTemplates.length === 0 && folders.length === 0 && !loading && (
@@ -716,6 +734,6 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                     </div>
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 }

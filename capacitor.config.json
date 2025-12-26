@@ -1,0 +1,8 @@
+{
+  "appId": "com.nanobnana.app",
+  "appName": "Nanobnana Fitness",
+  "webDir": "dist",
+  "ios": {
+    "orientation": "portrait"
+  }
+}

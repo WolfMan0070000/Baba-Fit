@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useLanguage } from '../../context/LanguageContext';
 import { program } from '../../data/program';
 import { Info, Dumbbell, Calculator, Plus, X, Clock, TrendingUp, Flame, Save, Minus } from 'lucide-react';
@@ -333,14 +334,34 @@ export default function WorkoutView({ template, user, onFinish }) {
         return null;
     };
 
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '100px' }}>
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '100px' }}
+        >
 
             {/* Header / Live Metrics */}
-            <div className="glass-panel pulse-glow" style={{
+            <motion.div variants={item} className="glass-panel pulse-glow" style={{
                 padding: '16px 20px',
                 position: 'sticky',
-                top: '0',
+                top: 'env(safe-area-inset-top, 0px)',
                 zIndex: 1000,
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -367,14 +388,19 @@ export default function WorkoutView({ template, user, onFinish }) {
                 <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary)' }}>
                     {activeExercises.length} Exercises
                 </div>
-            </div>
+            </motion.div>
 
             {/* Exercises */}
             {activeExercises.map((ex, index) => (
-                <div key={`${ex.id}-${index}`} className={`glass-panel ${ex.superset_id ? 'superset-group' : ''}`} style={{
-                    padding: '16px',
-                    borderLeft: ex.superset_id ? '4px solid var(--primary)' : '1px solid var(--border-light)'
-                }}>
+                <motion.div
+                    key={`${ex.id}-${index}`}
+                    variants={item}
+                    className={`glass-panel ${ex.superset_id ? 'superset-group' : ''}`}
+                    style={{
+                        padding: '16px',
+                        borderLeft: ex.superset_id ? '4px solid var(--primary)' : '1px solid var(--border-light)'
+                    }}
+                >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
                         <div onClick={() => setSelectedExercise(ex)} style={{ cursor: 'pointer', flex: 1 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -472,27 +498,30 @@ export default function WorkoutView({ template, user, onFinish }) {
                             </button>
                         )}
                     </div>
-                </div>
+                </motion.div>
             ))}
 
-            <button
+            <motion.button
+                variants={item}
                 onClick={() => setShowAddExercise(true)}
                 className="glass-panel"
                 style={{
                     padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                    color: 'var(--primary)', fontWeight: 600, cursor: 'pointer'
+                    color: 'var(--primary)', fontWeight: 600, cursor: 'pointer', border: 'none', width: '100%'
                 }}
             >
                 <Plus size={20} />
                 Add Exercise
-            </button>
+            </motion.button>
 
             {/* Session Timer & Finish Button */}
             {sessionActive && (
-                <WorkoutSession
-                    onFinish={handleFinishSession}
-                    initialStartTime={sessionStartTime}
-                />
+                <motion.div variants={item}>
+                    <WorkoutSession
+                        onFinish={handleFinishSession}
+                        initialStartTime={sessionStartTime}
+                    />
+                </motion.div>
             )}
 
             {/* Modals */}
@@ -533,6 +562,6 @@ export default function WorkoutView({ template, user, onFinish }) {
                 onClose={() => setShowSummary(false)}
                 data={sessionStats}
             />
-        </div>
+        </motion.div>
     );
 }

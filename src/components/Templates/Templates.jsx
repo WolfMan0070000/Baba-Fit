@@ -264,6 +264,8 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
         );
     }
 
+    const uncategorizedTemplates = templates.filter(t => !t.folder_id && !t.folderId);
+
     const container = {
         hidden: { opacity: 0 },
         show: {

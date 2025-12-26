@@ -13,9 +13,9 @@ export default defineConfig({
         enabled: true
       },
       manifest: {
-        name: 'Gym Tracker',
-        short_name: 'GymTracker',
-        description: 'Track your gym progress and workouts',
+        name: 'Nanobnana Fitness',
+        short_name: 'Nanobnana',
+        description: 'Elite Fitness Tracker Powered by Nanobnana',
         theme_color: '#00f2fe',
         background_color: '#050505',
         display: 'standalone',
@@ -24,12 +24,7 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
+            src: 'nanobnana_icon.png',
             sizes: '512x512',
             type: 'image/png'
           }

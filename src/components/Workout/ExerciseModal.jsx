@@ -10,10 +10,22 @@ export default function ExerciseModal({ exercise, onClose }) {
     const [loading, setLoading] = useState(!exercise?.video_url && !exercise?.image_url);
     const [isPlaying, setIsPlaying] = useState(false);
 
+    const getUserId = () => {
+        try {
+            const user = localStorage.getItem('gym_user');
+            if (!user) return 1;
+            const parsed = JSON.parse(user);
+            return parsed.id || 1;
+        } catch {
+            return 1;
+        }
+    };
+
     useEffect(() => {
         if (!exercise?.video_url && !exercise?.image_url) {
             setLoading(true);
-            fetch(`${API_BASE_URL}/exercises`)
+            const userId = getUserId();
+            fetch(`${API_BASE_URL}/exercises?userId=${userId}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.data) {
@@ -169,9 +181,14 @@ export default function ExerciseModal({ exercise, onClose }) {
                                     if (data.path) {
                                         const finalPath = data.path.startsWith('http') ? data.path : `${API_BASE_URL.replace('/api', '')}` + data.path;
                                         setImageUrl(finalPath);
-                                        // TODO: Optionally save this to DB indefinitely or just locally for session? 
-                                        // User request implies "users can add their own", so we should persist it to custom exercise or override.
-                                        // For now, I'll allow visual override.
+
+                                        // Persist to DB for user
+                                        const userId = getUserId();
+                                        await fetch(`${API_BASE_URL}/exercises/${exercise.exercise_id || exercise.id}`, {
+                                            method: 'PUT',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ image_url: finalPath, userId })
+                                        });
                                     }
                                     setLoading(false);
                                 } catch (err) {

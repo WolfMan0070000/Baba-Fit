@@ -169,6 +169,7 @@ function initDb() {
 
     run(`CREATE TABLE IF NOT EXISTS exercises (
         id ${idType},
+        user_id INTEGER,
         name ${textType} NOT NULL,
         muscle_group ${textType},
         equipment ${textType},
@@ -238,6 +239,14 @@ function initDb() {
         image_url ${textType} NOT NULL,
         session_id INTEGER,
         notes ${textType}
+    )`);
+
+    run(`CREATE TABLE IF NOT EXISTS exercise_overrides (
+        user_id INTEGER NOT NULL,
+        exercise_id INTEGER NOT NULL,
+        video_url ${textType},
+        image_url ${textType},
+        PRIMARY KEY (user_id, exercise_id)
     )`);
 }
 

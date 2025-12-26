@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Plus, Dumbbell, X, Camera, Pencil, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
+import { api } from '../../services/api';
 import ExerciseModal from '../Workout/ExerciseModal';
 
 export default function ExerciseLibrary() {
@@ -28,20 +29,31 @@ export default function ExerciseLibrary() {
 
     const fetchExercises = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/exercises`);
-            const data = await res.json();
-            if (data.data) {
-                setExercises(data.data);
-                setFiltered(data.data);
-            }
+            const data = await api.getExercises();
+            setExercises(data);
+            setFiltered(data);
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const getUserId = () => {
+        try {
+            const user = localStorage.getItem('gym_user');
+            if (!user) return 1;
+            const parsed = JSON.parse(user);
+            return parsed.id || 1;
+        } catch {
+            return 1;
         }
     };
 
     const handleAdd = async () => {
         if (!newEx.name) return;
         try {
+            const userId = getUserId();
+            const payload = { ...newEx, userId };
+
             const method = newEx.id ? 'PUT' : 'POST';
             const url = newEx.id
                 ? `${API_BASE_URL}/exercises/${newEx.id}`
@@ -50,7 +62,7 @@ export default function ExerciseLibrary() {
             const res = await fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newEx)
+                body: JSON.stringify(payload)
             });
             if (res.ok) {
                 setShowAdd(false);
@@ -72,7 +84,8 @@ export default function ExerciseLibrary() {
         e.stopPropagation();
         if (!window.confirm('Are you sure you want to delete this exercise?')) return;
         try {
-            await fetch(`${API_BASE_URL}/exercises/${id}`, { method: 'DELETE' });
+            const userId = getUserId();
+            await fetch(`${API_BASE_URL}/exercises/${id}?userId=${userId}`, { method: 'DELETE' });
             fetchExercises();
         } catch (err) {
             console.error(err);

@@ -7,6 +7,12 @@ export default function WorkoutSession({ onFinish, initialStartTime }) {
     const startTimeRef = useRef(initialStartTime ? new Date(initialStartTime) : new Date());
 
     useEffect(() => {
+        if (initialStartTime) {
+            startTimeRef.current = new Date(initialStartTime);
+        }
+    }, [initialStartTime]);
+
+    useEffect(() => {
         const interval = setInterval(() => {
             if (isActive) {
                 setElapsed(Math.floor((new Date() - startTimeRef.current) / 1000));

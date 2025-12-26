@@ -6,12 +6,13 @@ import { api } from '../../services/api';
 import { program } from '../../data/program';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function Templates({ onStartWorkout, user }) {
+export default function Templates({ onStartWorkout, user, hasActiveSession }) {
     const [folders, setFolders] = useState([]);
     const [templates, setTemplates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [importCode, setImportCode] = useState('');
     const [showImport, setShowImport] = useState(false);
+    const [activeSessionData, setActiveSessionData] = useState(null);
 
     // Default Template States
     const [expandDefault, setExpandDefault] = useState(true);
@@ -34,7 +35,23 @@ export default function Templates({ onStartWorkout, user }) {
 
     useEffect(() => {
         fetchData();
+        checkActiveSession();
     }, []);
+
+    const checkActiveSession = () => {
+        const saved = localStorage.getItem('active_workout_session');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            const today = new Date().toISOString().split('T')[0];
+            if (parsed.date === today) {
+                setActiveSessionData(parsed);
+            } else {
+                setActiveSessionData(null);
+            }
+        } else {
+            setActiveSessionData(null);
+        }
+    };
 
     const fetchData = async () => {
         const userId = user?.id || 1;
@@ -522,7 +539,7 @@ export default function Templates({ onStartWorkout, user }) {
                                                         }}
                                                     >
                                                         <Play size={16} fill="black" />
-                                                        Start Workout
+                                                        {activeSessionData?.dayData?.title_en === day.title_en ? 'Resume Workout' : 'Start Workout'}
                                                     </button>
                                                 </motion.div>
                                             )}
@@ -615,7 +632,7 @@ export default function Templates({ onStartWorkout, user }) {
                                                             style={{ flex: 1, padding: '10px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                                                         >
                                                             <Play size={14} fill="black" />
-                                                            Start
+                                                            {activeSessionData?.dayData?.title_en === t.name ? 'Resume' : 'Start'}
                                                         </button>
                                                         {t.share_code && (
                                                             <button
@@ -677,7 +694,7 @@ export default function Templates({ onStartWorkout, user }) {
                                 style={{ flex: 1, padding: '12px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                             >
                                 <Play size={16} fill="black" />
-                                Start Workout
+                                {activeSessionData?.dayData?.title_en === t.name ? 'Resume Workout' : 'Start Workout'}
                             </button>
                             {t.share_code && (
                                 <button

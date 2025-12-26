@@ -226,12 +226,17 @@ app.get('/api/sessions/:id', (req, res) => {
         if (!session) return res.status(404).json({ error: 'Session not found' });
 
         db.all(`
-            SELECT l.*, e.name as exercise_name, e.video_url
+            SELECT 
+                l.*, 
+                e.name as exercise_name, 
+                COALESCE(o.video_url, e.video_url) as video_url,
+                COALESCE(o.image_url, e.image_url) as image_url
             FROM workout_logs l
             LEFT JOIN exercises e ON l.exercise_id = e.id
-            WHERE l.session_id = ? OR (l.date = ? AND l.session_id IS NULL)
+            LEFT JOIN exercise_overrides o ON e.id = o.exercise_id AND o.user_id = l.user_id
+            WHERE (l.session_id = ? OR (l.date = ? AND l.session_id IS NULL)) AND l.user_id = ?
             ORDER BY l.id ASC
-        `, [id, session.date], (err, logs) => {
+        `, [id, session.date, session.user_id], (err, logs) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ data: { ...session, logs } });
         });
@@ -305,16 +310,28 @@ app.get('/api/history/volume/:exerciseId', (req, res) => {
 // --- Exercises ---
 
 app.get('/api/exercises', (req, res) => {
-    db.all("SELECT * FROM exercises ORDER BY name ASC", [], (err, rows) => {
+    const { userId } = req.query;
+    // Show global exercises + user's custom ones, merged with personal overrides
+    const query = `
+        SELECT 
+            e.*, 
+            COALESCE(o.video_url, e.video_url) as video_url, 
+            COALESCE(o.image_url, e.image_url) as image_url
+        FROM exercises e
+        LEFT JOIN exercise_overrides o ON e.id = o.exercise_id AND o.user_id = ?
+        WHERE e.user_id IS NULL OR e.user_id = ?
+        ORDER BY e.name ASC
+    `;
+    db.all(query, [userId || 1, userId || 1], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ data: rows });
     });
 });
 
 app.post('/api/exercises', (req, res) => {
-    const { name, muscle_group, equipment, type, video_url, image_url } = req.body;
-    const stmt = db.prepare("INSERT INTO exercises (name, muscle_group, equipment, type, video_url, image_url, is_custom) VALUES (?, ?, ?, ?, ?, ?, 1)");
-    stmt.run([name, muscle_group, equipment, type || 'weight_reps', video_url, image_url], function (err) {
+    const { name, muscle_group, equipment, type, video_url, image_url, userId } = req.body;
+    const stmt = db.prepare("INSERT INTO exercises (name, muscle_group, equipment, type, video_url, image_url, is_custom, user_id) VALUES (?, ?, ?, ?, ?, ?, 1, ?)");
+    stmt.run([name, muscle_group, equipment, type || 'weight_reps', video_url, image_url, userId || 1], function (err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: this.lastID, message: 'Exercise created' });
     });
@@ -322,31 +339,87 @@ app.post('/api/exercises', (req, res) => {
 
 app.put('/api/exercises/:id', (req, res) => {
     const { id } = req.params;
-    const { name, muscle_group, equipment, type, video_url, image_url } = req.body;
-    db.run(
-        `UPDATE exercises SET 
-            name = COALESCE(?, name), 
-            muscle_group = COALESCE(?, muscle_group), 
-            equipment = COALESCE(?, equipment), 
-            type = COALESCE(?, type), 
-            video_url = COALESCE(?, video_url), 
-            image_url = COALESCE(?, image_url)
-        WHERE id = ?`,
-        [name, muscle_group, equipment, type, video_url, image_url, id],
-        function (err) {
-            if (err) return res.status(500).json({ error: err.message });
-            if (this.changes === 0) return res.status(404).json({ error: 'Exercise not found' });
-            res.json({ message: 'Exercise updated' });
+    const { name, muscle_group, equipment, type, video_url, image_url, userId } = req.body;
+
+    // First, check if this is a global exercise
+    db.get("SELECT user_id FROM exercises WHERE id = ?", [id], (err, exercise) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!exercise) return res.status(404).json({ error: 'Exercise not found' });
+
+        if (exercise.user_id === null) {
+            // It's a global exercise. Save override instead of cloning.
+            // This keeps the exercise ID stable for history and templates.
+            db.run(
+                `INSERT INTO exercise_overrides (user_id, exercise_id, video_url, image_url)
+                 VALUES (?, ?, ?, ?)
+                 ON CONFLICT(user_id, exercise_id) DO UPDATE SET
+                 video_url = COALESCE(excluded.video_url, video_url),
+                 image_url = COALESCE(excluded.image_url, image_url)`,
+                [userId || 1, id, video_url, image_url],
+                function (err) {
+                    if (err) {
+                        // If ON CONFLICT isn't supported by the user's SQLite version, try fallback
+                        if (err.message.includes('syntax error')) {
+                            db.run("INSERT OR REPLACE INTO exercise_overrides (user_id, exercise_id, video_url, image_url) VALUES (?, ?, ?, ?)",
+                                [userId || 1, id, video_url, image_url],
+                                (err2) => {
+                                    if (err2) return res.status(500).json({ error: err2.message });
+                                    res.json({ message: 'Exercise override saved' });
+                                }
+                            );
+                            return;
+                        }
+                        return res.status(500).json({ error: err.message });
+                    }
+                    res.json({ message: 'Exercise override saved' });
+                }
+            );
+            return;
         }
-    );
+
+        // It's a custom exercise, update it directly
+        if (exercise.user_id !== (userId || 1)) {
+            return res.status(403).json({ error: 'Unauthorized to edit this exercise' });
+        }
+
+        db.run(
+            `UPDATE exercises SET 
+                name = COALESCE(?, name), 
+                muscle_group = COALESCE(?, muscle_group), 
+                equipment = COALESCE(?, equipment), 
+                type = COALESCE(?, type), 
+                video_url = COALESCE(?, video_url), 
+                image_url = COALESCE(?, image_url)
+            WHERE id = ? AND user_id = ?`,
+            [name, muscle_group, equipment, type, video_url, image_url, id, userId || 1],
+            function (err) {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ message: 'Exercise updated' });
+            }
+        );
+    });
 });
 
 app.delete('/api/exercises/:id', (req, res) => {
     const { id } = req.params;
-    db.run("DELETE FROM exercises WHERE id = ?", [id], function (err) {
+    const userId = req.query.userId || req.body.userId || 1;
+
+    // 1. Try to delete user-owned custom exercise
+    db.run("DELETE FROM exercises WHERE id = ? AND user_id = ?", [id, userId], function (err) {
         if (err) return res.status(500).json({ error: err.message });
-        if (this.changes === 0) return res.status(404).json({ error: 'Exercise not found' });
-        res.json({ message: 'Exercise deleted' });
+
+        if (this.changes > 0) {
+            return res.json({ message: 'Custom exercise deleted' });
+        }
+
+        // 2. If no custom exercise deleted, try to delete override for a global exercise
+        db.run("DELETE FROM exercise_overrides WHERE exercise_id = ? AND user_id = ?", [id, userId], function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            if (this.changes === 0) {
+                return res.status(403).json({ error: 'Unauthorized or not found' });
+            }
+            res.json({ message: 'Exercise override removed (reset to default)' });
+        });
     });
 });
 
@@ -464,12 +537,17 @@ app.get('/api/templates/:id', (req, res) => {
         if (err) return res.status(500).json({ error: err.message });
 
         db.all(`
-            SELECT te.*, e.name as exercise_name, e.video_url 
+            SELECT 
+                te.*, 
+                e.name as exercise_name, 
+                COALESCE(o.video_url, e.video_url) as video_url,
+                COALESCE(o.image_url, e.image_url) as image_url
             FROM template_exercises te 
             JOIN exercises e ON te.exercise_id = e.id 
+            LEFT JOIN exercise_overrides o ON e.id = o.exercise_id AND o.user_id = ?
             WHERE te.template_id = ? 
             ORDER BY te.execution_order ASC
-        `, [id], (err, exercises) => {
+        `, [template.user_id, id], (err, exercises) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ data: { ...template, exercises } });
         });

@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { api } from '../../services/api';
 import { diet } from '../../data/diet';
 
-export default function Dashboard({ onViewChange, user }) {
+export default function Dashboard({ onViewChange, user, hasActiveSession }) {
     const { t } = useLanguage();
     const [profile, setProfile] = useState(user || null);
     const [stats, setStats] = useState({ workoutsThisWeek: 0 });
@@ -84,9 +84,9 @@ export default function Dashboard({ onViewChange, user }) {
                     <button
                         className="btn btn-primary"
                         style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px' }}
-                        onClick={() => onViewChange('templates')}
+                        onClick={() => onViewChange(hasActiveSession ? 'workout' : 'templates')}
                     >
-                        Start Workout <ArrowRight size={18} />
+                        {hasActiveSession ? 'Resume Workout' : 'Start Workout'} <ArrowRight size={18} />
                     </button>
                 </div>
             </motion.div>

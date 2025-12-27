@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Search, Plus, Dumbbell, X, Camera, Pencil, Trash2 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { api } from '../../services/api';
@@ -92,10 +93,30 @@ export default function ExerciseLibrary() {
         }
     };
 
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.05
+            }
+        }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div style={{ padding: '16px', paddingBottom: '100px' }}>
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            style={{ padding: '16px', paddingBottom: '100px' }}
+        >
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <motion.div variants={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>Exercise Library</h2>
                 <button
                     onClick={() => {
@@ -107,10 +128,10 @@ export default function ExerciseLibrary() {
                 >
                     <Plus size={24} />
                 </button>
-            </div>
+            </motion.div>
 
             {/* Search */}
-            <div style={{ position: 'relative', marginBottom: '24px' }}>
+            <motion.div variants={item} style={{ position: 'relative', marginBottom: '24px' }}>
                 <Search size={20} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                 <input
                     type="text"
@@ -127,7 +148,7 @@ export default function ExerciseLibrary() {
                         fontSize: '1rem'
                     }}
                 />
-            </div>
+            </motion.div>
 
             {/* Add/Edit Form */}
             {showAdd && (
@@ -224,14 +245,18 @@ export default function ExerciseLibrary() {
             {/* List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {filtered.map(ex => (
-                    <div key={ex.id} style={{
-                        background: 'rgba(255,255,255,0.03)',
-                        padding: '16px',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                    }}>
+                    <motion.div
+                        key={ex.id}
+                        variants={item}
+                        style={{
+                            background: 'rgba(255,255,255,0.03)',
+                            padding: '16px',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}
+                    >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, cursor: 'pointer' }} onClick={() => setSelectedExercise(ex)}>
                             <div style={{
                                 width: '40px', height: '40px', borderRadius: '8px',
@@ -264,9 +289,9 @@ export default function ExerciseLibrary() {
                                 <Trash2 size={18} />
                             </button>
                         </div>
-                    </div>
+                    </motion.div>
                 ))}
             </div>
-        </div>
+        </motion.div>
     );
 }

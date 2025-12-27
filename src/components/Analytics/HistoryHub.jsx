@@ -8,6 +8,7 @@ import BodyMetrics from './BodyMetrics';
 import PRDashboard from './PRDashboard';
 import WeeklyCoach from './WeeklyCoach';
 import { api } from '../../services/api';
+import { motion } from 'framer-motion';
 
 export default function HistoryHub({ user }) {
     const [exercises, setExercises] = useState([]);
@@ -65,9 +66,29 @@ export default function HistoryHub({ user }) {
         }
     };
 
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px' }}
+        >
+            <motion.div variants={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2 className="text-gradient" style={{ fontSize: '1.5rem', marginLeft: '8px' }}>History Hub</h2>
                 <button
                     onClick={handleExport}
@@ -78,17 +99,17 @@ export default function HistoryHub({ user }) {
                 >
                     Export JSON
                 </button>
-            </div>
+            </motion.div>
 
-            <WeeklyCoach user={user} />
+            <motion.div variants={item}><WeeklyCoach user={user} /></motion.div>
 
-            <ActivityHeatmap />
+            <motion.div variants={item}><ActivityHeatmap /></motion.div>
 
-            <BodyMetrics />
+            <motion.div variants={item}><BodyMetrics /></motion.div>
 
-            <PRDashboard />
+            <motion.div variants={item}><PRDashboard /></motion.div>
 
-            <div className="glass-panel" style={{ padding: '16px' }}>
+            <motion.div variants={item} className="glass-panel" style={{ padding: '16px' }}>
                 <div style={{ marginBottom: '16px' }}>
                     <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>Select Exercise for Trends</label>
                     <select
@@ -119,9 +140,9 @@ export default function HistoryHub({ user }) {
                         color="var(--success)"
                     />
                 </div>
-            </div>
+            </motion.div>
 
-            <SessionList />
-        </div>
+            <motion.div variants={item}><SessionList /></motion.div>
+        </motion.div>
     );
 }

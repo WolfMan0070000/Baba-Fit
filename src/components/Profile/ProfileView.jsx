@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { User, Target, Scale, Ruler, Save, LogOut } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -26,12 +27,32 @@ export default function ProfileView({ user, onLogout }) {
 
     if (loading) return <div className="glass-panel" style={{ padding: '20px' }}>Loading...</div>;
 
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+    };
+
     return (
-        <div style={{ padding: '16px', paddingBottom: '100px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>My Profile</h2>
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            style={{ padding: '16px', paddingBottom: '100px', display: 'flex', flexDirection: 'column', gap: '20px' }}
+        >
+            <motion.h2 variants={item} className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>My Profile</motion.h2>
 
             {/* Personal Details */}
-            <div className="glass-panel" style={{ padding: '20px' }}>
+            <motion.div variants={item} className="glass-panel" style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                     <div style={{ padding: '10px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '50%', color: '#3b82f6' }}>
                         <User size={24} />
@@ -61,10 +82,10 @@ export default function ProfileView({ user, onLogout }) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Goals */}
-            <div className="glass-panel" style={{ padding: '20px' }}>
+            <motion.div variants={item} className="glass-panel" style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                     <div style={{ padding: '10px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', color: '#ef4444' }}>
                         <Target size={24} />
@@ -111,25 +132,27 @@ export default function ProfileView({ user, onLogout }) {
                         </div>
                     </div>
                 </div>
-            </div>
+            </motion.div>
 
-            <button
+            <motion.button
+                variants={item}
                 onClick={handleSave}
                 className="btn-primary"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px', fontSize: '1rem' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px', fontSize: '1rem', border: 'none' }}
             >
                 <Save size={20} />
                 Save Profile
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+                variants={item}
                 onClick={onLogout}
                 className="btn-outline"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px', fontSize: '1rem', border: '1px solid #ef4444', color: '#ef4444' }}
             >
                 <LogOut size={20} />
                 Log Out
-            </button>
-        </div>
+            </motion.button>
+        </motion.div>
     );
 }

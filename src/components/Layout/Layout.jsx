@@ -56,12 +56,12 @@ export default function Layout({ children, currentView, onViewChange, hasActiveS
             {hasActiveSession && (
                 <div onClick={() => onViewChange('workout')} style={{
                     position: 'fixed',
-                    bottom: 'max(100px, calc(80px + env(safe-area-inset-bottom, 0px)))',
+                    bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)',
                     left: '20px',
                     right: '20px',
                     background: 'linear-gradient(90deg, var(--primary), #00d2ff)',
                     padding: '12px 20px',
-                    borderRadius: '12px',
+                    borderRadius: '16px',
                     color: 'black',
                     display: 'flex',
                     alignItems: 'center',
@@ -69,9 +69,8 @@ export default function Layout({ children, currentView, onViewChange, hasActiveS
                     fontWeight: 700,
                     fontSize: '0.9rem',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 20px rgba(0, 242, 254, 0.4)',
+                    boxShadow: '0 8px 32px rgba(0, 242, 254, 0.3)',
                     zIndex: 90,
-                    animation: 'pulse 2s infinite'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <Dumbbell size={18} />
@@ -84,7 +83,7 @@ export default function Layout({ children, currentView, onViewChange, hasActiveS
             {/* Bottom Navigation */}
             <nav className="glass-panel" style={{
                 position: 'fixed',
-                bottom: 'max(20px, calc(10px + env(safe-area-inset-bottom, 0px)))',
+                bottom: 'env(safe-area-inset-bottom, 12px)',
                 left: '50%',
                 transform: 'translateX(-50%)',
                 width: 'calc(100% - 40px)',

@@ -41,6 +41,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -53,6 +54,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  -webkit-user-select: none;
+  /* Safari */
+  -ms-user-select: none;
+  /* IE 10 and IE 11 */
+  user-select: none;
+  /* Standard syntax */
 }
 
 body {
@@ -173,6 +180,9 @@ select,
 textarea {
   font-size: 16px !important;
   /* Forces 16px to prevent iOS auto-zoom */
+  -webkit-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 .input-elegant {

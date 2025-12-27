@@ -1,2 +1,2 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-export const UPLOADS_BASE_URL = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:3001/uploads';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3001/api' : '/api');
+export const UPLOADS_BASE_URL = import.meta.env.VITE_UPLOADS_URL || (import.meta.env.DEV ? 'http://localhost:3001/uploads' : '/uploads');

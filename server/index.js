@@ -73,7 +73,7 @@ if (fs.existsSync(distDir)) {
 }
 
 
-// Sanitize userId
+// Sanitize userId and params
 app.use((req, res, next) => {
     const sanitize = (val) => {
         if (val === 'undefined' || val === 'null' || val === '') return undefined;
@@ -85,6 +85,31 @@ app.use((req, res, next) => {
     if (req.query.userId) req.query.userId = sanitize(req.query.userId);
     if (req.body && req.body.userId) req.body.userId = sanitize(req.body.userId);
     if (req.body && req.body.user_id) req.body.user_id = sanitize(req.body.user_id);
+
+    // Also sanitize ID in params if they are numeric
+    if (req.params) {
+        if (req.params.id) {
+            const parsed = parseInt(req.params.id);
+            if (!isNaN(parsed)) req.params.id = parsed;
+        }
+        if (req.params.exerciseId) {
+            const parsed = parseInt(req.params.exerciseId);
+            if (!isNaN(parsed)) req.params.exerciseId = parsed;
+        }
+    }
+    next();
+});
+
+// Parameter handling for specific keys
+app.param('id', (req, res, next, id) => {
+    const parsed = parseInt(id);
+    if (!isNaN(parsed)) req.params.id = parsed;
+    next();
+});
+
+app.param('exerciseId', (req, res, next, id) => {
+    const parsed = parseInt(id);
+    if (!isNaN(parsed)) req.params.exerciseId = parsed;
     next();
 });
 
@@ -116,7 +141,7 @@ app.get('/api/logs', (req, res) => {
     const params = [userId || 1];
 
     if (date) {
-        query += ' AND date = ?';
+        query += ' AND date = ? AND session_id IS NULL';
         params.push(date);
     } else if (exercise_id) {
         // For auto-fill: get recent logs
@@ -199,21 +224,40 @@ app.get('/api/sessions', (req, res) => {
 
 // Create a new session (Finish Workout)
 app.post('/api/sessions', (req, res) => {
-    const { date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, userId } = req.body;
+    const { date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, difficulty, userId } = req.body;
 
     if (!date) {
         return res.status(400).json({ error: 'Missing required fields: date' });
     }
 
     db.run(
-        `INSERT INTO workout_sessions (date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, userId || 1],
+        `INSERT INTO workout_sessions (date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, difficulty, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, difficulty, userId || 1],
         function (err) {
-            if (err) {
-                res.status(500).json({ error: err.message });
-                return;
-            }
-            res.json({ message: 'Session saved', id: this.lastID });
+            const sessionId = this.lastID;
+            // Link logs to this session
+            db.run(
+                "UPDATE workout_logs SET session_id = ? WHERE user_id = ? AND date = ? AND session_id IS NULL",
+                [sessionId, userId || 1, date],
+                (err) => {
+                    if (err) console.error("Error linking logs to session:", err.message);
+                    res.json({ message: 'Session saved', id: sessionId });
+                }
+            );
+        }
+    );
+});
+
+// Update session (e.g., set difficulty)
+app.patch('/api/sessions/:id', (req, res) => {
+    const { id } = req.params;
+    const { difficulty, notes } = req.body;
+    db.run(
+        "UPDATE workout_sessions SET difficulty = COALESCE(?, difficulty) WHERE id = ?",
+        [difficulty, id],
+        function (err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Session updated' });
         }
     );
 });

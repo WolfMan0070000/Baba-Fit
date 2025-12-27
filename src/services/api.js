@@ -81,6 +81,19 @@ export const api = {
             throw error;
         }
     },
+    updateSession: async (id, sessionData) => {
+        try {
+            const res = await fetch(`${API_URL}/sessions/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(sessionData),
+            });
+            return await res.json();
+        } catch (error) {
+            console.error('Error updating session:', error);
+            throw error;
+        }
+    },
 
     // --- Analytics ---
     getHeatmapData: async () => {

@@ -41,14 +41,12 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
             setSetType(initialData.set_type || 'normal');
             setRpe(initialData.rpe || '');
         } else {
-            // Logs cleared (New Session), reset fields but respect auto-fill if not explicitly cleared
-            if (!ghostData) {
-                setWeight('');
-                setReps('');
-                setCompleted(false);
-                setSetType('normal');
-                setRpe('');
-            }
+            // Logs cleared (New Session), reset fields
+            setWeight('');
+            setReps('');
+            setCompleted(false);
+            setSetType('normal');
+            setRpe('');
         }
     }, [initialData]);
 
@@ -81,12 +79,22 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
         onSave(newData);
     };
 
-    const handleSave = () => {
-        const isComplete = !!(weight && reps);
-        setCompleted(isComplete);
+    const handleSave = (forceComplete = false) => {
+        const isComplete = forceComplete ? true : completed;
+        if (forceComplete) setCompleted(true);
+
         onSave({ weight, reps, completed: isComplete, set_type: setType, rpe });
-        setIsSaved(true);
-        setTimeout(() => setIsSaved(false), 2000);
+
+        if (forceComplete) {
+            setIsSaved(true);
+            setTimeout(() => setIsSaved(false), 2000);
+        }
+    };
+
+    const toggleCompleted = () => {
+        const newState = !completed;
+        setCompleted(newState);
+        onSave({ weight, reps, completed: newState, set_type: setType, rpe });
     };
 
     const toggleTag = (tag) => {
@@ -102,7 +110,7 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
         }
     };
 
-    // Calculate Ghost Values (Previous Session)
+    // Calculate Ghost Values
     const ghostWeight = ghostData ? ghostData.weight : '';
     const ghostReps = ghostData ? ghostData.reps : defaultReps;
 
@@ -119,81 +127,66 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                 gap: '8px',
                 alignItems: 'center',
             }}>
-                {/* Set Number Indicator */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '40px',
-                    background: completed ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                    color: completed ? '#000' : 'var(--text-muted)',
-                    borderRadius: '50%',
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    border: setType !== 'normal' ? `2px solid ${getTagColor()}` : 'none'
-                }}>
-                    {setType === 'warmup' ? 'W' : setType === 'drop' ? 'D' : setType === 'failure' ? 'F' : setNum}
+                {/* Set Number Indicator (Toggle Complete) */}
+                <div
+                    onClick={toggleCompleted}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '40px',
+                        background: completed ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                        color: completed ? '#000' : 'var(--text-muted)',
+                        borderRadius: '50%',
+                        fontWeight: 700,
+                        fontSize: '0.9rem',
+                        border: setType !== 'normal' ? `2px solid ${getTagColor()}` : 'none',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                    }}
+                >
+                    {completed ? <Check size={20} strokeWidth={3} /> : (setType === 'warmup' ? 'W' : setType === 'drop' ? 'D' : setType === 'failure' ? 'F' : setNum)}
                 </div>
 
                 {/* Weight Input */}
                 <div style={{ position: 'relative' }}>
                     <input
+                        className="input-compact"
                         type="number"
                         placeholder={ghostWeight ? `${ghostWeight} kg` : 'kg'}
                         value={weight}
                         onChange={(e) => handleChange('weight', e.target.value)}
                         onFocus={() => handleFocus('weight')}
-                        onBlur={handleSave}
-                        style={{
-                            width: '100%',
-                            padding: '8px',
-                            background: 'rgba(0,0,0,0.3)',
-                            border: '1px solid var(--border-light)',
-                            borderRadius: '8px',
-                            color: '#fff',
-                            textAlign: 'center'
-                        }}
+                        onBlur={() => handleSave(false)}
                     />
                 </div>
 
                 {/* Reps Input */}
                 <div style={{ position: 'relative' }}>
                     <input
+                        className="input-compact"
                         type="number"
                         placeholder={ghostReps}
                         value={reps}
                         onChange={(e) => handleChange('reps', e.target.value)}
                         onFocus={() => handleFocus('reps')}
-                        onBlur={handleSave}
-                        style={{
-                            width: '100%',
-                            padding: '8px',
-                            background: 'rgba(0,0,0,0.3)',
-                            border: '1px solid var(--border-light)',
-                            borderRadius: '8px',
-                            color: '#fff',
-                            textAlign: 'center'
-                        }}
+                        onBlur={() => handleSave(false)}
                     />
                 </div>
 
                 {/* RPE Input */}
                 <div style={{ position: 'relative' }}>
                     <input
+                        className="input-compact"
                         type="number"
                         placeholder={ghostData?.rpe || "RPE"}
                         value={rpe}
                         onChange={(e) => handleChange('rpe', e.target.value)}
                         onFocus={() => handleFocus('rpe')}
-                        onBlur={handleSave}
+                        onBlur={() => handleSave(false)}
                         style={{
-                            width: '100%',
-                            padding: '8px',
-                            background: 'rgba(0,0,0,0.3)',
-                            border: rpeError ? '1px solid #ef4444' : '1px solid var(--border-light)',
-                            borderRadius: '8px',
+                            borderColor: rpeError ? '#ef4444' : 'var(--border-light)',
                             color: rpeError ? '#ef4444' : 'var(--text-secondary)',
-                            textAlign: 'center',
                             fontSize: '0.85rem'
                         }}
                     />
@@ -215,7 +208,7 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
 
                 {/* Save Button */}
                 <button
-                    onClick={handleSave}
+                    onClick={() => handleSave(true)}
                     style={{
                         height: '40px',
                         width: '40px',

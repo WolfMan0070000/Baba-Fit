@@ -132,19 +132,16 @@ export default function ExerciseLibrary() {
 
             {/* Search */}
             <motion.div variants={item} style={{ position: 'relative', marginBottom: '24px' }}>
-                <Search size={20} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+                <Search size={20} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)', zIndex: 1 }} />
                 <input
+                    className="input-elegant"
                     type="text"
                     placeholder="Search exercises..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     style={{
                         width: '100%',
-                        padding: '12px 12px 12px 44px',
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid var(--border-light)',
-                        borderRadius: '12px',
-                        color: 'white',
+                        paddingLeft: '44px',
                         fontSize: '1rem'
                     }}
                 />
@@ -160,32 +157,34 @@ export default function ExerciseLibrary() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <input
+                            className="input-elegant"
                             placeholder="Exercise Name"
                             value={newEx.name}
                             onChange={e => setNewEx({ ...newEx, name: e.target.value })}
-                            style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
                         />
                         <div style={{ display: 'flex', gap: '8px' }}>
                             <select
+                                className="input-elegant"
                                 value={newEx.muscle_group}
                                 onChange={e => setNewEx({ ...newEx, muscle_group: e.target.value })}
-                                style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
+                                style={{ flex: 1 }}
                             >
                                 {['Chest', 'Back', 'Legs', 'Shoulders', 'Biceps', 'Triceps', 'Core', 'Cardio'].map(m => <option key={m} value={m}>{m}</option>)}
                             </select>
                             <select
+                                className="input-elegant"
                                 value={newEx.equipment}
                                 onChange={e => setNewEx({ ...newEx, equipment: e.target.value })}
-                                style={{ flex: 1, padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
+                                style={{ flex: 1 }}
                             >
                                 {['Barbell', 'Dumbbell', 'Machine', 'Cable', 'Bodyweight', 'Other'].map(e => <option key={e} value={e}>{e}</option>)}
                             </select>
                         </div>
                         <input
+                            className="input-elegant"
                             placeholder="Video URL (YouTube)"
                             value={newEx.video_url || ''}
                             onChange={e => setNewEx({ ...newEx, video_url: e.target.value })}
-                            style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
                         />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             {newEx.image_url ? (
@@ -199,7 +198,7 @@ export default function ExerciseLibrary() {
                                     </button>
                                 </div>
                             ) : (
-                                <label className="btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', padding: '12px', border: '1px dashed var(--border-light)', borderRadius: '8px' }}>
+                                <label className="btn btn-secondary" style={{ flex: 1, cursor: 'pointer', padding: '12px', borderStyle: 'dashed' }}>
                                     <Camera size={20} />
                                     <span>Upload Image</span>
                                     <input
@@ -229,7 +228,9 @@ export default function ExerciseLibrary() {
                                 </label>
                             )}
                         </div>
-                        <button onClick={handleAdd} className="btn-primary" style={{ marginTop: '8px' }}>{newEx.id ? 'Update Exercise' : 'Save Exercise'}</button>
+                        <button onClick={handleAdd} className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
+                            {newEx.id ? 'Update Exercise' : 'Save Exercise'}
+                        </button>
                     </div>
                 </div>
             )}
@@ -275,18 +276,18 @@ export default function ExerciseLibrary() {
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{ex.muscle_group} • {ex.equipment}</span>
                             </div>
                         </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleEdit(ex); }}
-                                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                                className="btn-icon"
                             >
-                                <Pencil size={18} />
+                                <Pencil size={18} color="var(--text-muted)" />
                             </button>
                             <button
                                 onClick={(e) => { handleDelete(ex.id, e); }}
-                                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
+                                className="btn-icon"
                             >
-                                <Trash2 size={18} />
+                                <Trash2 size={18} color="var(--text-muted)" />
                             </button>
                         </div>
                     </motion.div>

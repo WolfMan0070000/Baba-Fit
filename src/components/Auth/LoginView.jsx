@@ -43,7 +43,7 @@ export default function LoginView({ onLogin, onGuest }) {
             paddingBottom: 'max(24px, env(safe-area-inset-bottom, 24px))',
             background: 'var(--bg-app)'
         }}>
-            <h1 className="text-gradient" style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '8px' }}>FAT SHREDDER</h1>
+            <h1 className="text-gradient" style={{ fontSize: '2.8rem', fontWeight: 900, marginBottom: '8px', letterSpacing: '-0.02em' }}>BABA FIT</h1>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '40px' }}>Your Personal Transformation Hub</p>
 
             <div className="glass-panel" style={{ width: '100%', maxWidth: '320px', padding: '24px' }}>
@@ -55,27 +55,29 @@ export default function LoginView({ onLogin, onGuest }) {
 
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     <div style={{ position: 'relative' }}>
-                        <User size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+                        <User size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)', zIndex: 1 }} />
                         <input
+                            className="input-elegant"
                             type="text"
                             placeholder="Username"
                             value={username}
                             onChange={e => setUsername(e.target.value)}
-                            style={{ width: '100%', padding: '10px 10px 10px 40px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
+                            style={{ width: '100%', paddingLeft: '40px' }}
                         />
                     </div>
                     <div style={{ position: 'relative' }}>
-                        <Lock size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+                        <Lock size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)', zIndex: 1 }} />
                         <input
+                            className="input-elegant"
                             type="password"
                             placeholder="Password"
                             value={password}
                             onChange={e => setPassword(e.target.value)}
-                            style={{ width: '100%', padding: '10px 10px 10px 40px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
+                            style={{ width: '100%', paddingLeft: '40px' }}
                         />
                     </div>
 
-                    <button type="submit" className="btn-primary" style={{ marginTop: '8px' }}>
+                    <button type="submit" className="btn btn-primary" style={{ marginTop: '8px', width: '100%' }}>
                         {isRegister ? 'Sign Up' : 'Log In'}
                     </button>
                 </form>
@@ -92,9 +94,10 @@ export default function LoginView({ onLogin, onGuest }) {
 
                     <button
                         onClick={onGuest}
-                        style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.9rem', cursor: 'pointer' }}
+                        className="btn btn-secondary"
+                        style={{ width: '100%', fontSize: '0.9rem' }}
                     >
-                        Continue as Guest <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                        Continue as Guest <ArrowRight size={16} />
                     </button>
                 </div>
             </div>

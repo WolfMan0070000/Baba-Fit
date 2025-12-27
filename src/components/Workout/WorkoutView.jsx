@@ -1,537 +1,373 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { useLanguage } from '../../context/LanguageContext';
-import { program } from '../../data/program';
-import { Info, Dumbbell, Calculator, Plus, X, Clock, TrendingUp, Flame, Save, Minus } from 'lucide-react';
-import SelectExerciseModal from './SelectExerciseModal';
-import SetTracker from './SetTracker';
-import ExerciseModal from './ExerciseModal';
-import PlateCalculator from './PlateCalculator';
-import WarmupCalculator from './WarmupCalculator';
-import RestTimer from './RestTimer';
+
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Plus, MoreVertical, Trash2, Info, Dumbbell, Minus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../../services/api';
 import WorkoutSession from './WorkoutSession';
 import WorkoutSummary from './WorkoutSummary';
-import { api } from '../../services/api';
+import SelectExerciseModal from './SelectExerciseModal';
+import SetTracker from './SetTracker';
 
-export default function WorkoutView({ template, user, onFinish }) {
-    const { t, isRTL } = useLanguage();
-
-    const [dayData, setDayData] = useState(null);
-    const [logs, setLogs] = useState([]);
-    const [history, setHistory] = useState({});
-    const [selectedExercise, setSelectedExercise] = useState(null);
-
-    // Feature States
-    const [showPlateCalc, setShowPlateCalc] = useState(false);
-    const [calcTargetWeight, setCalcTargetWeight] = useState(100);
-    const [showTimer, setShowTimer] = useState(false);
-    const [timerDuration, setTimerDuration] = useState(90);
-    const [showWarmup, setShowWarmup] = useState(false);
-    const [warmupTarget, setWarmupTarget] = useState(100);
-
-    // Session States
-    const [sessionActive, setSessionActive] = useState(false);
-    const [sessionStartTime, setSessionStartTime] = useState(null);
-    const [showSummary, setShowSummary] = useState(false);
-    const [sessionStats, setSessionStats] = useState(null);
-
+export default function WorkoutView({ user, template, onFinish }) {
+    // Core State
     const [activeExercises, setActiveExercises] = useState([]);
-    const [initialExercises, setInitialExercises] = useState([]); // To track changes
+    const [sessionStartTime, setSessionStartTime] = useState(null);
+    const [sessionId, setSessionId] = useState(null);
+    const [workoutName, setWorkoutName] = useState('');
+
+    // UI State
     const [showAddExercise, setShowAddExercise] = useState(false);
-    const [swapIndex, setSwapIndex] = useState(null);
+    const [showSummary, setShowSummary] = useState(false);
+    const [summaryData, setSummaryData] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    // Debounce Refs
-    const debounceTimers = useRef({});
-
-    // Initialize Day Data / Resume Session
+    // Initialize Session
     useEffect(() => {
-        const saved = localStorage.getItem('active_workout_session');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            const today = new Date().toISOString().split('T')[0];
-            if (parsed.date === today) {
-                setDayData(parsed.dayData);
-                setActiveExercises(parsed.activeExercises);
-                setInitialExercises(parsed.initialExercises || parsed.activeExercises);
-                setLogs(parsed.logs);
-                setSessionStartTime(parsed.startTime);
-                setSessionActive(true);
-                return;
+        const initSession = async () => {
+            const saved = localStorage.getItem('active_workout_session');
+            let currentExercises = [];
+
+            if (saved) {
+                // Resume existing session
+                const parsed = JSON.parse(saved);
+                const today = new Date().toISOString().split('T')[0];
+
+                if (parsed.date === today) {
+                    setSessionStartTime(parsed.startTime);
+                    setWorkoutName(parsed.name);
+                    setSessionId(parsed.id); // If we have a backend ID
+                    if (parsed.exercises) {
+                        currentExercises = parsed.exercises;
+                    }
+                } else {
+                    // Expired session
+                    localStorage.removeItem('active_workout_session');
+                }
             }
-        }
 
-        if (template) {
-            const adaptedExercises = template.exercises.map(e => ({
-                id: e.exercise_id || e.id,
-                name_en: e.exercise_name || e.name,
-                name_fa: e.exercise_name || e.name,
-                sets: e.target_sets || 3,
-                reps: e.target_reps || '10',
-                rpe: 8,
-                note_en: e.notes,
-                note_fa: e.notes
-            }));
+            // If no active session found (or expired), start fresh from template
+            if (currentExercises.length === 0 && template) {
+                setWorkoutName(template.name);
+                setSessionStartTime(new Date().toISOString());
 
-            setDayData({
-                title_en: template.name,
-                title_fa: template.name,
-                subtitle_en: template.notes || 'Custom Template',
-                subtitle_fa: template.notes || 'Custom Template'
-            });
-            setActiveExercises(adaptedExercises);
-            setInitialExercises(adaptedExercises);
-        } else {
-            const today = new Date().getDay();
-            const defaultDayId = program.schedule[today] === 'rest' ? 'day1' : program.schedule[today];
-            const defaultData = program.days[defaultDayId];
-            setDayData(defaultData);
-            setActiveExercises(defaultData.exercises);
-            setInitialExercises(defaultData.exercises);
-        }
-        setSessionStartTime(new Date().toISOString());
-        setSessionActive(true);
+                // Map template exercises to active format
+                currentExercises = template.exercises?.map(ex => ({
+                    ...ex,
+                    sets: Array.from({ length: ex.target_sets || 3 }).map((_, i) => ({
+                        id: Date.now() + Math.random(),
+                        setNum: i + 1,
+                        weight: '',
+                        reps: '',
+                        completed: false,
+                        type: 'normal'
+                    }))
+                })) || [];
+            }
+
+            setActiveExercises(currentExercises);
+            setLoading(false);
+        };
+
+        initSession();
     }, [template]);
 
-    // Persist session state
+    // Persist to LocalStorage
     useEffect(() => {
-        if (sessionActive && dayData) {
-            const sessionState = {
+        if (!loading && activeExercises.length > 0) {
+            const sessionData = {
                 date: new Date().toISOString().split('T')[0],
-                dayData,
-                activeExercises,
-                initialExercises,
-                logs,
-                startTime: sessionStartTime
+                startTime: sessionStartTime,
+                name: workoutName,
+                exercises: activeExercises
             };
-            localStorage.setItem('active_workout_session', JSON.stringify(sessionState));
+            localStorage.setItem('active_workout_session', JSON.stringify(sessionData));
         }
-    }, [activeExercises, logs, dayData, sessionStartTime, sessionActive, initialExercises]);
+    }, [activeExercises, sessionStartTime, workoutName, loading]);
 
     const handleAddExercise = (exercise) => {
         const newExercise = {
             id: exercise.id,
-            name_en: exercise.name,
-            name_fa: exercise.name,
-            sets: 3,
-            reps: '10',
-            rpe: 8,
-            note_en: '',
-            note_fa: ''
+            name: exercise.name,
+            target_sets: 3,
+            target_reps: '10', // Default
+            sets: [
+                { id: Date.now(), setNum: 1, weight: '', reps: '', completed: false, type: 'normal' },
+                { id: Date.now() + 1, setNum: 2, weight: '', reps: '', completed: false, type: 'normal' },
+                { id: Date.now() + 2, setNum: 3, weight: '', reps: '', completed: false, type: 'normal' }
+            ]
         };
-
-        if (swapIndex !== null) {
-            const updated = [...activeExercises];
-            updated[swapIndex] = { ...newExercise, sets: activeExercises[swapIndex].sets };
-            setActiveExercises(updated);
-            setSwapIndex(null);
-        } else {
-            setActiveExercises([...activeExercises, newExercise]);
-        }
+        setActiveExercises([...activeExercises, newExercise]);
         setShowAddExercise(false);
     };
 
     const handleRemoveExercise = (index) => {
-        if (window.confirm("Are you sure you want to remove this exercise?")) {
+        if (window.confirm('Remove this exercise?')) {
             const updated = [...activeExercises];
             updated.splice(index, 1);
             setActiveExercises(updated);
         }
     };
 
-    const handleSwapExercise = (index) => {
-        setSwapIndex(index);
-        setShowAddExercise(true);
-    };
-
-    const handleAddSet = (index) => {
+    const handleAddSet = (exerciseIndex) => {
         const updated = [...activeExercises];
-        updated[index].sets += 1;
+        const exercise = updated[exerciseIndex];
+        const lastSet = exercise.sets[exercise.sets.length - 1];
+
+        exercise.sets.push({
+            id: Date.now(),
+            setNum: exercise.sets.length + 1,
+            weight: lastSet ? lastSet.weight : '',
+            reps: lastSet ? lastSet.reps : '',
+            completed: false,
+            type: 'normal'
+        });
         setActiveExercises(updated);
     };
 
-    const handleRemoveSet = (index) => {
+    const handleRemoveLastSet = (exerciseIndex) => {
         const updated = [...activeExercises];
-        if (updated[index].sets > 1) {
-            updated[index].sets -= 1;
+        const exercise = updated[exerciseIndex];
+        if (exercise.sets.length > 0) {
+            exercise.sets.pop(); // Remove last set
             setActiveExercises(updated);
         }
     };
 
-    // Fetch current logs
-    useEffect(() => {
-        if (!dayData) return;
-        const dateStr = new Date().toISOString().split('T')[0];
-        // If resuming logs are already set from localStorage, but we might want to refresh from API?
-        // Relying on localStorage is safer for "in-progress" integrity.
-        // Only fetch if logs are empty (first load of day)
-        if (logs.length === 0) {
-            api.getLogs(dateStr).then(data => {
-                if (data && data.length > 0) setLogs(data);
-            });
-        }
-    }, [dayData]);
+    const handleUpdateSet = (exerciseIndex, setIndex, data) => {
+        const updated = [...activeExercises];
+        updated[exerciseIndex].sets[setIndex] = {
+            ...updated[exerciseIndex].sets[setIndex],
+            ...data
+        };
+        setActiveExercises(updated);
+    };
 
-    // Fetch history
-    useEffect(() => {
-        if (!activeExercises?.length) return;
-        const fetchHistory = async () => {
-            const historyData = {};
-            for (let ex of activeExercises) {
-                const prevLogs = await api.getLogs(null, ex.id);
-                if (prevLogs && prevLogs.length > 0) {
-                    historyData[ex.id] = prevLogs;
+    const handleFinishWorkout = async (timerData) => {
+        // Compute Summary Data
+        let totalVolume = 0;
+        let setsCompleted = 0;
+        const muscles = new Set();
+
+        const exerciseBreakdown = activeExercises.map(ex => {
+            let exVolume = 0;
+            let maxWeight = 0;
+            let maxReps = 0;
+
+            ex.sets.forEach(s => {
+                if (s.completed && s.weight && s.reps) {
+                    const vol = parseFloat(s.weight) * parseFloat(s.reps);
+                    exVolume += vol;
+                    totalVolume += vol;
+                    setsCompleted++;
+                    if (parseFloat(s.weight) > maxWeight) maxWeight = parseFloat(s.weight);
+                    if (parseFloat(s.reps) > maxReps) maxReps = parseFloat(s.reps);
                 }
-            }
-            setHistory(historyData);
-        };
-        fetchHistory();
-    }, [activeExercises]);
+            });
 
-    if (!dayData) return <div className="glass-panel" style={{ padding: '20px' }}>Loading...</div>;
+            // Assuming we have muscle data in exercise object, if not we skip
+            if (ex.muscle_group) muscles.add(ex.muscle_group);
 
-    const handleSaveSet = (exerciseId, setIndex, data) => {
-        const dateStr = new Date().toISOString().split('T')[0];
-        const logData = {
-            date: dateStr,
-            exercise_id: exerciseId,
-            set_number: setIndex + 1,
-            weight: data.weight,
-            reps: data.reps,
-            completed: data.completed,
-            set_type: data.set_type,
-            rpe: data.rpe
-        };
-
-        // 1. Immediate Local Update (for Persistence)
-        setLogs(prev => {
-            const existingInfo = prev.findIndex(l =>
-                l.date === dateStr && l.exercise_id === exerciseId && l.set_number === (setIndex + 1)
-            );
-            if (existingInfo > -1) {
-                const newLogs = [...prev];
-                newLogs[existingInfo] = { ...newLogs[existingInfo], ...logData };
-                return newLogs;
-            } else {
-                return [...prev, logData];
-            }
+            return {
+                id: ex.id,
+                name: ex.name,
+                volume: exVolume,
+                maxWeight,
+                maxReps,
+                // These are placeholders for now, would typically compare with history
+                isPR: false,
+                delta: 0,
+                recommendation: "Keep pushing!"
+            };
         });
 
-        // 2. Timer Logic (Immediate)
-        if (data.completed && !logs.find(l => l.exercise_id === exerciseId && l.set_number === (setIndex + 1))?.completed) {
-            let restTime = 90;
-            if (data.set_type === 'warmup') restTime = 45;
-            if (data.set_type === 'failure' || (data.rpe && data.rpe >= 9)) restTime = 180;
-            setTimerDuration(restTime);
-            setShowTimer(true);
-        }
+        const finishedData = {
+            workoutName: workoutName,
+            startTime: sessionStartTime,
+            endTime: new Date().toISOString(),
+            duration: timerData.durationMinutes,
+            volume: totalVolume,
+            calories: Math.floor(timerData.durationMinutes * 5), // Estimate
+            efficiency: {
+                avgTimePerExercise: activeExercises.length > 0 ? (timerData.durationMinutes / activeExercises.length).toFixed(1) : 0,
+                completedSets: setsCompleted
+            },
+            muscles: Array.from(muscles),
+            exerciseBreakdown,
+            sessionId: sessionId // Use if we had a backend ID created at start
+        };
 
-        // 3. Debounced API Call
-        const timerKey = `${exerciseId}-${setIndex}`;
-        if (debounceTimers.current[timerKey]) {
-            clearTimeout(debounceTimers.current[timerKey]);
-        }
-
-        debounceTimers.current[timerKey] = setTimeout(async () => {
-            try {
-                await api.saveLog(logData);
-            } catch (err) {
-                console.error("Failed to save log to API", err);
-            }
-        }, 1000); // 1 second debounce
-    };
-
-    const hasProgramChanged = () => {
-        if (activeExercises.length !== initialExercises.length) return true;
-        for (let i = 0; i < activeExercises.length; i++) {
-            if (activeExercises[i].id !== initialExercises[i].id) return true;
-            if (activeExercises[i].sets !== initialExercises[i].sets) return true;
-        }
-        return false;
-    };
-
-    const handleFinishSession = async (sessionData) => {
-        // Question: Save Changes?
-        if (hasProgramChanged()) {
-            if (window.confirm("You modified the workout. Do you want to save these changes to your program for next time?")) {
-                // Logic to save template updates (would need an API endpoint for updating templates/program)
-                // Since we don't have that explicit API in the snippet, we'll just log or pretend.
-                // Ideally: api.updateTemplate(template.id, activeExercises);
-                console.log("Saving program changes...");
-            }
-        }
-
+        // Save to Backend
         try {
-            let totalVolume = 0;
-            logs.forEach(l => {
-                if (l.completed) {
-                    totalVolume += (l.weight * l.reps);
-                }
+            const userId = user?.id || 1;
+            const res = await api.saveSession({
+                userId,
+                name: workoutName,
+                startTime: sessionStartTime,
+                endTime: new Date().toISOString(),
+                exercises: activeExercises
             });
-
-            const calories = Math.floor(sessionData.durationMinutes * 5.5);
-
-            const finalSessionData = {
-                date: new Date().toISOString().split('T')[0],
-                start_time: sessionData.startTime,
-                end_time: sessionData.endTime,
-                duration_minutes: sessionData.durationMinutes,
-                calories_burned: calories,
-                total_volume: totalVolume,
-                workout_name: isRTL ? dayData.title_fa : dayData.title_en
-            };
-
-            await api.saveSession(finalSessionData);
-
-            setSessionStats({
-                workoutName: finalSessionData.workout_name,
-                duration: finalSessionData.duration_minutes,
-                calories: finalSessionData.calories_burned,
-                volume: finalSessionData.total_volume
-            });
-            setShowSummary(true);
-
-            // Clear storage and reset
-            localStorage.removeItem('active_workout_session');
-            setLogs([]);
-            setSessionActive(false);
-            setSessionStartTime(null);
-            if (onFinish) onFinish();
-        } catch (err) {
-            console.error("Failed to finish session", err);
-        }
-    };
-
-    const openWarmup = (weight) => {
-        setWarmupTarget(weight || 60);
-        setShowWarmup(true);
-    };
-
-    const openPlateCalc = (weight) => {
-        setCalcTargetWeight(weight || 20);
-        setShowPlateCalc(true);
-    };
-
-    // Helper to extract strictly CURRENT session data
-    const getCurrentLog = (exId, setNum) => {
-        return logs.find(l => l.exercise_id === exId && l.set_number === setNum);
-    };
-
-    // Helper to extract PREVIOUS session data (Ghost)
-    const getGhostLog = (exId, setNum) => {
-        if (history[exId]) {
-            const prevParams = history[exId]
-                .filter(l => l.set_number === setNum)
-                .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-
-            if (prevParams) {
-                return {
-                    weight: prevParams.weight,
-                    reps: prevParams.reps,
-                    rpe: prevParams.rpe
-                };
+            if (res && res.sessionId) {
+                finishedData.sessionId = res.sessionId;
             }
+        } catch (e) {
+            console.error("Failed to save session", e);
         }
-        return null;
+
+        setSummaryData(finishedData);
+        setShowSummary(true);
+        localStorage.removeItem('active_workout_session');
     };
 
-    const container = {
-        hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
-        }
+    const handleCloseSummary = () => {
+        setShowSummary(false);
+        if (onFinish) onFinish();
     };
 
-    const item = {
-        hidden: { opacity: 0, y: 20 },
-        show: { opacity: 1, y: 0 }
-    };
+    if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading Workout...</div>;
 
     return (
-        <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '100px' }}
-        >
-
-            {/* Header / Live Metrics */}
-            <motion.div variants={item} className="glass-panel pulse-glow" style={{
-                padding: '16px 20px',
-                position: 'sticky',
-                top: 'env(safe-area-inset-top, 0px)',
-                zIndex: 1000,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderTopLeftRadius: 0,
-                borderTopRightRadius: 0,
-                borderTop: 'none'
+        <div style={{ paddingBottom: '100px', minHeight: '100vh', position: 'relative' }}>
+            {/* Header */}
+            <div style={{
+                padding: '20px 16px',
+                position: 'sticky', top: 0, zIndex: 10,
+                background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                borderBottom: '1px solid var(--border-light)'
             }}>
-                <div>
-                    <h2 className="text-gradient" style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '2px' }}>
-                        {isRTL ? dayData.title_fa : dayData.title_en}
-                    </h2>
-                    <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <TrendingUp size={12} color="var(--primary)" />
-                            {Math.round(logs.filter(l => l.completed).reduce((acc, l) => acc + (l.weight * l.reps), 0))} kg
-                        </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={12} color="var(--primary)" />
-                            {sessionActive ? 'Live' : 'Paused'}
-                        </span>
-                    </div>
+                <div style={{ flex: 1 }}>
+                    <h2 className="text-gradient" style={{ margin: 0, fontSize: '1.4rem' }}>{workoutName}</h2>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {activeExercises.length} Exercises • In Progress
+                    </p>
                 </div>
-                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.9rem', fontWeight: 700, color: 'var(--primary)' }}>
-                    {activeExercises.length} Exercises
-                </div>
-            </motion.div>
-
-            {/* Exercises */}
-            {activeExercises.map((ex, index) => (
-                <motion.div
-                    key={`${ex.id}-${index}`}
-                    variants={item}
-                    className={`glass-panel ${ex.superset_id ? 'superset-group' : ''}`}
-                    style={{
-                        padding: '16px',
-                        borderLeft: ex.superset_id ? '4px solid var(--primary)' : '1px solid var(--border-light)'
-                    }}
+                <button
+                    onClick={() => setShowAddExercise(true)}
+                    className="btn-icon"
+                    style={{ background: 'var(--primary)', color: '#000' }}
                 >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-                        <div onClick={() => setSelectedExercise(ex)} style={{ cursor: 'pointer', flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, borderBottom: '1px dashed var(--text-muted)' }}>
-                                    {isRTL ? ex.name_fa : ex.name_en}
-                                </h3>
-                                <Info size={16} color="var(--primary)" />
-                            </div>
-                            <div style={{ display: 'flex', gap: '12px', fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                <span>{ex.sets} {t('sets')}</span>
-                                <span>{ex.reps} {t('reps')}</span>
-                            </div>
-                        </div>
+                    <Plus size={24} />
+                </button>
+            </div>
 
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                                onClick={() => openWarmup(getCurrentLog(ex.id, 1)?.weight || getGhostLog(ex.id, 1)?.weight)}
-                                className="btn-icon"
-                                style={{ background: 'rgba(245, 158, 11, 0.1)' }}
-                                title="Warmup Calculator"
-                            >
-                                <Flame size={18} color="var(--accent)" />
-                            </button>
-                            <button
-                                onClick={() => openPlateCalc(getCurrentLog(ex.id, 1)?.weight || getGhostLog(ex.id, 1)?.weight)}
-                                className="btn-icon"
-                                title="Plate Calculator"
-                            >
-                                <Calculator size={18} color="var(--text-secondary)" />
-                            </button>
-                            <button
-                                onClick={() => handleSwapExercise(index)}
-                                className="btn-icon"
-                                style={{ background: 'rgba(0, 242, 254, 0.1)' }}
-                                title="Swap Exercise"
-                            >
-                                <Dumbbell size={18} color="var(--primary)" />
-                            </button>
-                            <button
-                                onClick={() => handleRemoveExercise(index)}
-                                className="btn-icon"
-                                style={{ background: 'rgba(239, 68, 68, 0.1)' }}
-                                title="Remove"
-                            >
-                                <X size={18} color="#ef4444" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {(ex.note_en || ex.note_fa) && (
-                        <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '8px', borderRadius: '6px', marginBottom: '12px', fontSize: '0.8rem', color: 'var(--accent)' }}>
-                            {isRTL ? ex.note_fa : ex.note_en}
-                        </div>
-                    )}
-
-                    <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr 40px', gap: '8px', marginBottom: '8px', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                        <div>#</div>
-                        <div>Weight</div>
-                        <div>Reps</div>
-                        <div>RPE</div>
-                        <div>Done</div>
-                    </div>
-
-                    {Array.from({ length: ex.sets }).map((_, i) => {
-                        const currentData = getCurrentLog(ex.id, i + 1);
-                        // Ghost Data now STRICTLY comes from history (Previous Session)
-                        let ghostData = getGhostLog(ex.id, i + 1);
-
-                        return (
-                            <SetTracker
-                                key={i}
-                                setNum={i + 1}
-                                defaultReps={ex.reps}
-                                onSave={(data) => handleSaveSet(ex.id, i, data)}
-                                initialData={currentData}
-                                ghostData={ghostData}
-                            />
-                        );
-                    })}
-
-                    {/* Add/Remove Sets Controls */}
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
-                        <button onClick={() => handleAddSet(index)} style={{
-                            background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--primary)',
-                            padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
+            {/* Exercise List */}
+            <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {activeExercises.map((ex, exIndex) => (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={exIndex} // Using index as key for simplicity if duplicates allowed, though id preferred
+                        className="glass-panel"
+                        style={{ padding: '0', overflow: 'hidden' }}
+                    >
+                        {/* Exercise Header */}
+                        <div style={{
+                            padding: '16px',
+                            background: 'rgba(255,255,255,0.03)',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                         }}>
-                            <Plus size={14} /> Set
-                        </button>
-                        {ex.sets > 1 && (
-                            <button onClick={() => handleRemoveSet(index)} style={{
-                                background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-secondary)',
-                                padding: '4px 12px', borderRadius: '12px', fontSize: '0.8rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px'
-                            }}>
-                                <Minus size={14} /> Set
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div style={{
+                                    width: '40px', height: '40px', borderRadius: '8px',
+                                    background: 'rgba(255,255,255,0.05)', color: 'var(--primary)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}>
+                                    <Dumbbell size={20} />
+                                </div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>{ex.name}</h3>
+                            </div>
+                            <button
+                                onClick={() => handleRemoveExercise(exIndex)}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                            >
+                                <Trash2 size={18} />
                             </button>
-                        )}
+                        </div>
+
+                        {/* Sets */}
+                        <div style={{ padding: '16px' }}>
+                            <div style={{
+                                display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr 40px',
+                                gap: '8px', marginBottom: '8px',
+                                fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center'
+                            }}>
+                                <div>Set</div>
+                                <div>kg</div>
+                                <div>Reps</div>
+                                <div>RPE</div>
+                                <div>✓</div>
+                            </div>
+
+                            {ex.sets.map((set, setIndex) => {
+                                // Calculate ghost data (previous set in this session)
+                                const ghostData = setIndex > 0 ? ex.sets[setIndex - 1] : null;
+
+                                return (
+                                    <SetTracker
+                                        key={set.id || setIndex}
+                                        setNum={set.setNum}
+                                        defaultReps={ex.target_reps}
+                                        initialData={set}
+                                        ghostData={ghostData}
+                                        onSave={(data) => handleUpdateSet(exIndex, setIndex, data)}
+                                    />
+                                );
+                            })}
+
+                            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+                                <button
+                                    onClick={() => handleAddSet(exIndex)}
+                                    style={{
+                                        flex: 1, padding: '12px',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px dashed var(--border-light)', borderRadius: '8px',
+                                        color: 'var(--text-secondary)', fontSize: '0.9rem',
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+                                    }}
+                                >
+                                    <Plus size={16} /> Add Set
+                                </button>
+                                {ex.sets.length > 0 && (
+                                    <button
+                                        onClick={() => handleRemoveLastSet(exIndex)}
+                                        style={{
+                                            width: '48px', padding: '0',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            border: '1px dashed var(--border-light)', borderRadius: '8px',
+                                            color: 'var(--text-muted)', fontSize: '0.9rem',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}
+                                    >
+                                        <Minus size={20} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+
+                {activeExercises.length === 0 && (
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px' }}>
+                        <p>No exercises added yet.</p>
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => setShowAddExercise(true)}
+                        >
+                            Add Your First Exercise
+                        </button>
                     </div>
-                </motion.div>
-            ))}
+                )}
+            </div>
 
-            <motion.button
-                variants={item}
-                onClick={() => setShowAddExercise(true)}
-                className="glass-panel"
-                style={{
-                    padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                    color: 'var(--primary)', fontWeight: 600, cursor: 'pointer', border: 'none', width: '100%'
-                }}
-            >
-                <Plus size={20} />
-                Add Exercise
-            </motion.button>
-
-            {/* Session Timer & Finish Button */}
-            {sessionActive && (
-                <motion.div variants={item}>
-                    <WorkoutSession
-                        onFinish={handleFinishSession}
-                        initialStartTime={sessionStartTime}
-                    />
-                </motion.div>
-            )}
+            {/* Footer Session Timer */}
+            <div style={{ marginTop: '24px', padding: '0 16px 40px 16px', zIndex: 10 }}>
+                <WorkoutSession
+                    initialStartTime={sessionStartTime}
+                    onFinish={handleFinishWorkout}
+                />
+            </div>
 
             {/* Modals */}
-            {selectedExercise && (
-                <ExerciseModal
-                    exercise={selectedExercise}
-                    onClose={() => setSelectedExercise(null)}
-                />
-            )}
-
             {showAddExercise && (
                 <SelectExerciseModal
                     onClose={() => setShowAddExercise(false)}
@@ -539,29 +375,15 @@ export default function WorkoutView({ template, user, onFinish }) {
                 />
             )}
 
-            <PlateCalculator
-                isOpen={showPlateCalc}
-                onClose={() => setShowPlateCalc(false)}
-                targetWeight={calcTargetWeight}
-            />
-
-            <WarmupCalculator
-                isOpen={showWarmup}
-                onClose={() => setShowWarmup(false)}
-                targetWeight={warmupTarget}
-            />
-
-            <RestTimer
-                isOpen={showTimer}
-                onClose={() => setShowTimer(false)}
-                recommendedSeconds={timerDuration}
-            />
-
-            <WorkoutSummary
-                isOpen={showSummary}
-                onClose={() => setShowSummary(false)}
-                data={sessionStats}
-            />
-        </motion.div>
+            <AnimatePresence>
+                {showSummary && (
+                    <WorkoutSummary
+                        isOpen={showSummary}
+                        onClose={handleCloseSummary}
+                        data={summaryData}
+                    />
+                )}
+            </AnimatePresence>
+        </div>
     );
 }

@@ -69,7 +69,7 @@ function App() {
   const renderView = () => {
     switch (currentView) {
       case 'dashboard': return <Dashboard user={user} onViewChange={setCurrentView} hasActiveSession={hasActiveSession} />;
-      case 'workout': return <WorkoutView user={user} template={activeTemplate} onFinish={() => setHasActiveSession(false)} />;
+      case 'workout': return <WorkoutView user={user} template={activeTemplate} onFinish={() => { setHasActiveSession(false); setCurrentView('dashboard'); }} />;
       case 'exercises': return <ExerciseLibrary user={user} />;
       case 'templates': return <Templates user={user} onStartWorkout={startWorkout} hasActiveSession={hasActiveSession} />;
       case 'history': return <HistoryHub user={user} />;

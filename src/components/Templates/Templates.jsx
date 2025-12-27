@@ -24,6 +24,7 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
     const [showCreateFolder, setShowCreateFolder] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [expandedFolders, setExpandedFolders] = useState({});
+    const [expandedTemplateId, setExpandedTemplateId] = useState(null); // For custom templates preview
 
     // Move Template State
     const [moveTargetId, setMoveTargetId] = useState(null); // Template ID to move
@@ -346,8 +347,8 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                     onChange={e => setImportCode(e.target.value)}
                                 />
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={handleImport} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Import</button>
-                                    <button onClick={() => setShowImport(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+                                    <button onClick={handleImport} className="btn btn-primary" style={{ flex: 1 }}>Import</button>
+                                    <button onClick={() => setShowImport(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
                                 </div>
                             </div>
                         </motion.div>
@@ -378,8 +379,8 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                     onChange={e => setNewFolderName(e.target.value)}
                                 />
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={handleCreateFolder} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Create</button>
-                                    <button onClick={() => setShowCreateFolder(false)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+                                    <button onClick={handleCreateFolder} className="btn btn-primary" style={{ flex: 1 }}>Create</button>
+                                    <button onClick={() => setShowCreateFolder(false)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
                                 </div>
                             </div>
                         </motion.div>
@@ -410,8 +411,8 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                     onChange={e => setEditFolderName(e.target.value)}
                                 />
                                 <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button onClick={handleUpdateFolder} className="btn-primary" style={{ flex: 1, justifyContent: 'center' }}>Save</button>
-                                    <button onClick={() => setEditingFolderId(null)} className="btn-secondary" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+                                    <button onClick={handleUpdateFolder} className="btn btn-primary" style={{ flex: 1 }}>Save</button>
+                                    <button onClick={() => setEditingFolderId(null)} className="btn btn-secondary" style={{ flex: 1 }}>Cancel</button>
                                 </div>
                             </div>
                         </motion.div>
@@ -476,6 +477,7 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                         <FolderOpen size={20} color="var(--primary)" />
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>12-Week Specialization</h3>
                     </div>
+                    {expandDefault ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                 </div>
 
                 <AnimatePresence>
@@ -492,28 +494,27 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                         style={{
                                             padding: '16px',
                                             border: '1px solid var(--border-light)',
-                                            cursor: 'pointer',
-                                            transition: 'background 0.2s',
-                                            background: previewDay === day.id ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)'
+                                            background: 'rgba(255,255,255,0.02)'
                                         }}
-                                        onClick={() => setPreviewDay(previewDay === day.id ? null : day.id)}
                                     >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', cursor: 'pointer' }} onClick={() => setPreviewDay(previewDay === day.id ? null : day.id)}>
                                                 <div style={{
-                                                    width: '40px', height: '40px', borderRadius: '10px',
+                                                    width: '36px', height: '36px', borderRadius: '8px',
                                                     background: 'rgba(255,255,255,0.05)', color: 'white',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     flexShrink: 0
                                                 }}>
-                                                    <FileText size={20} />
+                                                    <FileText size={18} />
                                                 </div>
                                                 <div>
-                                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{day.title_en}</h3>
-                                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{day.subtitle_en}</p>
+                                                    <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{day.title_en}</h3>
+                                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{day.subtitle_en}</p>
                                                 </div>
                                             </div>
-                                            {previewDay === day.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                            <button onClick={() => setPreviewDay(previewDay === day.id ? null : day.id)} className="btn-icon">
+                                                {previewDay === day.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                                            </button>
                                         </div>
 
                                         <AnimatePresence>
@@ -524,43 +525,40 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                                     exit={{ height: 0, opacity: 0 }}
                                                     style={{ overflow: 'hidden' }}
                                                 >
-                                                    <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
-                                                        <h4 style={{ fontSize: '0.9rem', marginBottom: '8px', opacity: 0.8 }}>Exercises:</h4>
-                                                        <ul style={{ paddingLeft: '20px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                                            {day.exercises.map(e => (
-                                                                <li key={e.id} style={{ marginBottom: '4px' }}>
-                                                                    {e.name_en} <span style={{ opacity: 0.5 }}>({e.sets} x {e.reps})</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
+                                                    <div style={{ padding: '24px 24px 40px 24px' }}>
+                                                        <div style={{ marginBottom: '16px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                                                            <ul style={{ paddingLeft: '16px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                                                {day.exercises.map(e => (
+                                                                    <li key={e.id} style={{ marginBottom: '4px' }}>
+                                                                        {e.name_en} <span style={{ opacity: 0.5 }}>({e.sets} x {e.reps})</span>
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
 
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            const templateData = {
-                                                                name: day.title_en,
-                                                                notes: day.subtitle_en,
-                                                                exercises: day.exercises.map(e => ({
-                                                                    id: e.id,
-                                                                    name: e.name_en,
-                                                                    target_sets: e.sets,
-                                                                    target_reps: e.reps,
-                                                                    notes: e.note_en
-                                                                }))
-                                                            };
-                                                            onStartWorkout(templateData);
-                                                        }}
-                                                        className="btn-primary"
-                                                        style={{
-                                                            width: '100%',
-                                                            marginTop: '12px', padding: '12px', fontSize: '0.9rem',
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                                                        }}
-                                                    >
-                                                        <Play size={16} fill="black" />
-                                                        {activeSessionData?.dayData?.title_en === day.title_en ? 'Resume Workout' : 'Start Workout'}
-                                                    </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const templateData = {
+                                                                    name: day.title_en,
+                                                                    notes: day.subtitle_en,
+                                                                    exercises: day.exercises.map(e => ({
+                                                                        id: e.id,
+                                                                        name: e.name_en,
+                                                                        target_sets: e.sets,
+                                                                        target_reps: e.reps,
+                                                                        notes: e.note_en
+                                                                    }))
+                                                                };
+                                                                onStartWorkout(templateData);
+                                                            }}
+                                                            className="btn btn-primary"
+                                                            style={{ width: '100%' }}
+                                                        >
+                                                            <Play size={14} fill="black" />
+                                                            {activeSessionData?.dayData?.title_en === day.title_en ? 'Resume' : 'Start'}
+                                                        </button>
+                                                    </div>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
@@ -606,7 +604,7 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                         <Edit2 size={16} color="var(--text-muted)" />
                                     </button>
                                     <button onClick={(e) => handleDeleteFolder(folder.id, e)} className="btn-icon">
-                                        <Trash2 size={16} color="#ef4444" />
+                                        <Trash2 size={16} color="var(--error)" />
                                     </button>
                                     {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                                 </div>
@@ -620,8 +618,13 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                     >
                                         <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', background: 'rgba(0,0,0,0.2)' }}>
                                             {folderTemplates.map(t => (
-                                                <div key={t.id} className="glass-panel" style={{ padding: '16px', border: '1px solid var(--border-light)' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                                <div
+                                                    key={t.id}
+                                                    className="glass-panel"
+                                                    style={{ padding: '16px', border: '1px solid var(--border-light)', cursor: 'pointer' }}
+                                                    onClick={() => setExpandedTemplateId(expandedTemplateId === t.id ? null : t.id)}
+                                                >
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                             <div style={{
                                                                 width: '36px', height: '36px', borderRadius: '8px',
@@ -640,31 +643,47 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                                                 <FolderInput size={16} color="var(--primary)" />
                                                             </button>
                                                             <button onClick={(e) => handleDeleteTemplate(t.id, e)} className="btn-icon">
-                                                                <Trash2 size={16} color="#ef4444" />
+                                                                <Trash2 size={16} color="var(--error)" />
                                                             </button>
+                                                            <div className="btn-icon">
+                                                                {expandedTemplateId === t.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                                            </div>
                                                         </div>
                                                     </div>
 
-                                                    <div style={{ display: 'flex', gap: '12px' }}>
-                                                        <button
-                                                            onClick={(e) => handleStart(t.id)}
-                                                            className="btn-primary"
-                                                            style={{ flex: 1, padding: '10px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                                                        >
-                                                            <Play size={14} fill="black" />
-                                                            {activeSessionData?.dayData?.title_en === t.name ? 'Resume' : 'Start'}
-                                                        </button>
-                                                        {t.share_code && (
-                                                            <button
-                                                                onClick={(e) => handleShare(t.share_code, e)}
-                                                                className="btn-icon"
-                                                                style={{ background: 'rgba(0, 242, 254, 0.1)' }}
-                                                                title="Share Workout"
+                                                    <AnimatePresence>
+                                                        {expandedTemplateId === t.id && (
+                                                            <motion.div
+                                                                initial={{ height: 0, opacity: 0 }}
+                                                                animate={{ height: 'auto', opacity: 1 }}
+                                                                exit={{ height: 0, opacity: 0 }}
+                                                                style={{ overflow: 'hidden' }}
                                                             >
-                                                                <Share2 size={16} color="var(--primary)" />
-                                                            </button>
+                                                                <div style={{ padding: '24px 24px 40px 24px' }}>
+                                                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleStart(t.id); }}
+                                                                            className="btn btn-primary"
+                                                                            style={{ flex: 1 }}
+                                                                        >
+                                                                            <Play size={14} fill="black" />
+                                                                            {activeSessionData?.dayData?.title_en === t.name ? 'Resume' : 'Start'}
+                                                                        </button>
+                                                                        {t.share_code && (
+                                                                            <button
+                                                                                onClick={(e) => handleShare(t.share_code, e)}
+                                                                                className="btn btn-secondary"
+                                                                                style={{ padding: '0 16px' }}
+                                                                                title="Share Workout"
+                                                                            >
+                                                                                <Share2 size={16} color="var(--primary)" />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </motion.div>
                                                         )}
-                                                    </div>
+                                                    </AnimatePresence>
                                                 </div>
                                             ))}
                                             {folderTemplates.length === 0 && (
@@ -682,8 +701,14 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
 
                 {/* Uncategorized Templates */}
                 {uncategorizedTemplates.map(t => (
-                    <motion.div key={t.id} variants={item} className="glass-panel" style={{ padding: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <motion.div
+                        key={t.id}
+                        variants={item}
+                        className="glass-panel"
+                        style={{ padding: '16px', cursor: 'pointer' }}
+                        onClick={() => setExpandedTemplateId(expandedTemplateId === t.id ? null : t.id)}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <div style={{
                                     width: '40px', height: '40px', borderRadius: '10px',
@@ -702,31 +727,47 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                                     <FolderInput size={18} color="var(--primary)" />
                                 </button>
                                 <button onClick={(e) => handleDeleteTemplate(t.id, e)} className="btn-icon">
-                                    <Trash2 size={18} color="#ef4444" />
+                                    <Trash2 size={18} color="var(--error)" />
                                 </button>
+                                <div className="btn-icon">
+                                    {expandedTemplateId === t.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                </div>
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <button
-                                onClick={() => handleStart(t.id)}
-                                className="btn-primary"
-                                style={{ flex: 1, padding: '12px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                            >
-                                <Play size={16} fill="black" />
-                                {activeSessionData?.dayData?.title_en === t.name ? 'Resume Workout' : 'Start Workout'}
-                            </button>
-                            {t.share_code && (
-                                <button
-                                    onClick={(e) => handleShare(t.share_code, e)}
-                                    className="btn-icon"
-                                    style={{ background: 'rgba(0, 242, 254, 0.1)' }}
-                                    title="Share Workout"
+                        <AnimatePresence>
+                            {expandedTemplateId === t.id && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    style={{ overflow: 'hidden' }}
                                 >
-                                    <Share2 size={16} color="var(--primary)" />
-                                </button>
+                                    <div style={{ padding: '24px 24px 40px 24px' }}>
+                                        <div style={{ display: 'flex', gap: '12px' }}>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleStart(t.id); }}
+                                                className="btn btn-primary"
+                                                style={{ flex: 1 }}
+                                            >
+                                                <Play size={16} fill="black" />
+                                                {activeSessionData?.dayData?.title_en === t.name ? 'Resume' : 'Start'}
+                                            </button>
+                                            {t.share_code && (
+                                                <button
+                                                    onClick={(e) => handleShare(t.share_code, e)}
+                                                    className="btn btn-secondary"
+                                                    style={{ padding: '0 20px' }}
+                                                    title="Share Workout"
+                                                >
+                                                    <Share2 size={16} color="var(--primary)" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                </motion.div>
                             )}
-                        </div>
+                        </AnimatePresence>
                     </motion.div>
                 ))}
 

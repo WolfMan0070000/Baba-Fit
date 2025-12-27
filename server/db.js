@@ -164,7 +164,8 @@ function initDb() {
         duration_minutes INTEGER,
         calories_burned INTEGER,
         total_volume REAL,
-        workout_name ${textType}
+        workout_name ${textType},
+        difficulty ${textType}
     )`);
 
     run(`CREATE TABLE IF NOT EXISTS exercises (

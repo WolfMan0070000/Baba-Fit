@@ -24,16 +24,16 @@ export default function Layout({ children, currentView, onViewChange, hasActiveS
                 alignItems: 'center'
             }}>
                 <div>
-                    <h1 className="text-gradient" style={{ fontSize: '1.25rem', fontWeight: 800 }}>FAT SHREDDER</h1>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>12-Week Specialization</p>
+                    <h1 className="text-gradient" style={{ fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.02em' }}>BABA FIT</h1>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Elite Transformation</p>
                 </div>
                 <button
                     onClick={toggleLanguage}
-                    className="btn glass-panel"
-                    style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    className="btn btn-secondary"
+                    style={{ padding: '8px 12px', minWidth: '60px' }}
                 >
                     <Globe size={16} />
-                    <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{language === 'en' ? 'FA' : 'EN'}</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700 }}>{language === 'en' ? 'FA' : 'EN'}</span>
                 </button>
             </header>
 
@@ -60,16 +60,16 @@ export default function Layout({ children, currentView, onViewChange, hasActiveS
                     left: '20px',
                     right: '20px',
                     background: 'linear-gradient(90deg, var(--primary), #00d2ff)',
-                    padding: '12px 20px',
-                    borderRadius: '12px',
+                    padding: '14px 24px',
+                    borderRadius: '100px',
                     color: 'black',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    fontWeight: 700,
+                    fontWeight: 800,
                     fontSize: '0.9rem',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 20px rgba(0, 242, 254, 0.4)',
+                    boxShadow: '0 8px 25px rgba(0, 242, 254, 0.4)',
                     zIndex: 90,
                     animation: 'pulse 2s infinite'
                 }}>
@@ -107,12 +107,14 @@ export default function Layout({ children, currentView, onViewChange, hasActiveS
                             alignItems: 'center',
                             gap: '4px',
                             cursor: 'pointer',
-                            transition: 'color 0.2s',
-                            fontFamily: 'inherit'
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            fontFamily: 'inherit',
+                            transform: currentView === item.id ? 'scale(1.1) translateY(-4px)' : 'scale(1)',
+                            textShadow: currentView === item.id ? '0 0 10px var(--primary-glow)' : 'none'
                         }}
                     >
-                        <item.icon size={24} />
-                        <span style={{ fontSize: '0.75rem', fontWeight: 500 }}>{item.label}</span>
+                        <item.icon size={22} style={{ filter: currentView === item.id ? 'drop-shadow(0 0 8px var(--primary-glow))' : 'none' }} />
+                        <span style={{ fontSize: '0.7rem', fontWeight: currentView === item.id ? 700 : 500 }}>{item.label}</span>
                     </button>
                 ))}
             </nav>

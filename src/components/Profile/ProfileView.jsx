@@ -54,30 +54,32 @@ export default function ProfileView({ user, onLogout }) {
             {/* Personal Details */}
             <motion.div variants={item} className="glass-panel" style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ padding: '10px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '50%', color: '#3b82f6' }}>
+                    <div className="icon-container-blue">
                         <User size={24} />
                     </div>
-                    <h3 style={{ fontSize: '1.1rem' }}>Personal Details</h3>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Personal Details</h3>
                 </div>
 
                 <div style={{ display: 'grid', gap: '16px' }}>
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Display Name</label>
+                        <label className="label-small">Display Name</label>
                         <input
+                            className="input-elegant"
                             value={profile.name}
                             onChange={e => setProfile({ ...profile, name: e.target.value })}
-                            style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
+                            style={{ width: '100%' }}
                         />
                     </div>
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Height (cm)</label>
+                        <label className="label-small">Height (cm)</label>
                         <div style={{ position: 'relative' }}>
-                            <Ruler size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
+                            <Ruler size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                             <input
+                                className="input-elegant"
                                 type="number"
                                 value={profile.height || ''}
                                 onChange={e => setProfile({ ...profile, height: e.target.value })}
-                                style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
+                                style={{ width: '100%', paddingLeft: '40px' }}
                             />
                         </div>
                     </div>
@@ -87,19 +89,20 @@ export default function ProfileView({ user, onLogout }) {
             {/* Goals */}
             <motion.div variants={item} className="glass-panel" style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ padding: '10px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '50%', color: '#ef4444' }}>
+                    <div className="icon-container-red">
                         <Target size={24} />
                     </div>
-                    <h3 style={{ fontSize: '1.1rem' }}>Fitness Goals</h3>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Fitness Goals</h3>
                 </div>
 
                 <div style={{ display: 'grid', gap: '16px' }}>
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Main Goal</label>
+                        <label className="label-small">Main Goal</label>
                         <select
+                            className="input-elegant"
                             value={profile.goal}
                             onChange={e => setProfile({ ...profile, goal: e.target.value })}
-                            style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
+                            style={{ width: '100%' }}
                         >
                             <option value="Get Strong">Get Stronger</option>
                             <option value="Build Muscle">Build Muscle</option>
@@ -110,24 +113,26 @@ export default function ProfileView({ user, onLogout }) {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Target Weight (kg)</label>
+                            <label className="label-small">Target Weight (kg)</label>
                             <div style={{ position: 'relative' }}>
-                                <Scale size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
+                                <Scale size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                                 <input
+                                    className="input-elegant"
                                     type="number"
                                     value={profile.target_weight || ''}
                                     onChange={e => setProfile({ ...profile, target_weight: e.target.value })}
-                                    style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
+                                    style={{ width: '100%', paddingLeft: '40px' }}
                                 />
                             </div>
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Weekly Workouts</label>
+                            <label className="label-small">Weekly Workouts</label>
                             <input
+                                className="input-elegant"
                                 type="number"
                                 value={profile.weekly_goal || 4}
                                 onChange={e => setProfile({ ...profile, weekly_goal: e.target.value })}
-                                style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', color: 'white' }}
+                                style={{ width: '100%' }}
                             />
                         </div>
                     </div>
@@ -137,8 +142,8 @@ export default function ProfileView({ user, onLogout }) {
             <motion.button
                 variants={item}
                 onClick={handleSave}
-                className="btn-primary"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px', fontSize: '1rem', border: 'none' }}
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '16px' }}
             >
                 <Save size={20} />
                 Save Profile
@@ -147,8 +152,8 @@ export default function ProfileView({ user, onLogout }) {
             <motion.button
                 variants={item}
                 onClick={onLogout}
-                className="btn-outline"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px', fontSize: '1rem', border: '1px solid #ef4444', color: '#ef4444' }}
+                className="btn btn-danger"
+                style={{ width: '100%', padding: '16px' }}
             >
                 <LogOut size={20} />
                 Log Out

@@ -51,8 +51,7 @@ export default function TemplateBuilder({ template, onBack, onSave }) {
                 </div>
                 <button
                     onClick={handleSave}
-                    className="btn-primary"
-                    style={{ padding: '8px 20px', borderRadius: '12px', fontSize: '0.9rem' }}
+                    className="btn btn-primary"
                 >
                     <Save size={18} /> Save
                 </button>
@@ -136,7 +135,7 @@ export default function TemplateBuilder({ template, onBack, onSave }) {
             </button>
 
             <div style={{ marginTop: '32px' }}>
-                <button onClick={handleSave} className="btn-primary" style={{ width: '100%', padding: '16px', borderRadius: '16px' }}>
+                <button onClick={handleSave} className="btn btn-primary" style={{ width: '100%', padding: '16px' }}>
                     <Save size={20} /> Finish & Save Blueprint
                 </button>
             </div>

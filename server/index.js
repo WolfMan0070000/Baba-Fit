@@ -159,6 +159,7 @@ app.get('/api/logs', (req, res) => {
 });
 
 // Save or Update a log
+// Save or Update a log
 app.post('/api/logs', (req, res) => {
     const { date, exercise_id, set_number, weight, reps, completed, set_type, rpe, userId } = req.body;
 
@@ -166,26 +167,25 @@ app.post('/api/logs', (req, res) => {
         return res.status(400).json({ error: 'Missing required fields: date, exercise_id, set_number' });
     }
 
+    // Normalize completed to boolean for Postgres compatibility
+    const isCompleted = completed === 1 || completed === '1' || completed === true || completed === 'true';
+
     // Check if exists
     db.get(
         `SELECT id FROM workout_logs WHERE date = ? AND exercise_id = ? AND set_number = ? AND user_id = ?`,
         [date, exercise_id, set_number, userId || 1],
         (err, row) => {
             if (err) {
-                res.status(500).json({ error: err.message });
-                return;
+                return res.status(500).json({ error: err.message });
             }
 
             if (row) {
                 // Update
                 db.run(
                     `UPDATE workout_logs SET weight = ?, reps = ?, completed = ?, set_type = ?, rpe = ? WHERE id = ?`,
-                    [weight, reps, completed, set_type || 'normal', rpe, row.id],
+                    [weight, reps, isCompleted, set_type || 'normal', rpe, row.id],
                     (err) => {
-                        if (err) {
-                            res.status(500).json({ error: err.message });
-                            return;
-                        }
+                        if (err) return res.status(500).json({ error: err.message });
                         res.json({ message: 'Log updated', id: row.id });
                     }
                 );
@@ -193,12 +193,9 @@ app.post('/api/logs', (req, res) => {
                 // Insert
                 db.run(
                     `INSERT INTO workout_logs (date, exercise_id, set_number, weight, reps, completed, set_type, rpe, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [date, exercise_id, set_number, weight, reps, completed, set_type || 'normal', rpe, userId || 1],
+                    [date, exercise_id, set_number, weight, reps, isCompleted, set_type || 'normal', rpe, userId || 1],
                     function (err) {
-                        if (err) {
-                            res.status(500).json({ error: err.message });
-                            return;
-                        }
+                        if (err) return res.status(500).json({ error: err.message });
                         res.json({ message: 'Log created', id: this.lastID });
                     }
                 );

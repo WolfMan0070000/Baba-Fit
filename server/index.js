@@ -280,7 +280,7 @@ app.get('/api/sessions/:id', (req, res) => {
             LEFT JOIN exercise_overrides o ON e.id = o.exercise_id AND o.user_id = l.user_id
             WHERE l.session_id = ? AND l.user_id = ?
             ORDER BY l.id ASC
-        `, [id, session.date, session.user_id], (err, logs) => {
+        `, [id, session.user_id], (err, logs) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ data: { ...session, logs } });
         });
@@ -393,26 +393,28 @@ app.put('/api/exercises/:id', (req, res) => {
         if (exercise.user_id === null) {
             // It's a global exercise. Save override instead of cloning.
             // This keeps the exercise ID stable for history and templates.
+            // Universal Upsert: Try UPDATE, if no changes, then INSERT.
+            // This avoids SQL dialect differences with ON CONFLICT / INSERT OR REPLACE.
+            const ovParams = [video_url, image_url, userId || 1, id];
             db.run(
-                `INSERT INTO exercise_overrides (user_id, exercise_id, video_url, image_url)
-                 VALUES (?, ?, ?, ?)
-                 ON CONFLICT(user_id, exercise_id) DO UPDATE SET
-                 video_url = COALESCE(excluded.video_url, video_url),
-                 image_url = COALESCE(excluded.image_url, image_url)`,
-                [userId || 1, id, video_url, image_url],
+                "UPDATE exercise_overrides SET video_url = ?, image_url = ? WHERE user_id = ? AND exercise_id = ?",
+                ovParams,
                 function (err) {
-                    if (err) {
-                        // Fallback for strict SQLite or other errors
-                        db.run("INSERT OR REPLACE INTO exercise_overrides (user_id, exercise_id, video_url, image_url) VALUES (?, ?, ?, ?)",
-                            [userId || 1, id, video_url, image_url],
-                            (err2) => {
-                                if (err2) return res.status(500).json({ error: err2.message });
-                                res.json({ message: 'Exercise override saved' });
-                            }
-                        );
-                        return;
+                    if (err) return res.status(500).json({ error: err.message });
+
+                    if (this.changes > 0) {
+                        return res.json({ message: 'Exercise override updated' });
                     }
-                    res.json({ message: 'Exercise override saved' });
+
+                    // If no changes, insert new
+                    db.run(
+                        "INSERT INTO exercise_overrides (user_id, exercise_id, video_url, image_url) VALUES (?, ?, ?, ?)",
+                        [userId || 1, id, video_url, image_url],
+                        (err2) => {
+                            if (err2) return res.status(500).json({ error: err2.message });
+                            res.json({ message: 'Exercise override created' });
+                        }
+                    );
                 }
             );
             return;

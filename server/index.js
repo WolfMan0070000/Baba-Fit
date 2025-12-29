@@ -278,7 +278,7 @@ app.get('/api/sessions/:id', (req, res) => {
             FROM workout_logs l
             LEFT JOIN exercises e ON l.exercise_id = e.id
             LEFT JOIN exercise_overrides o ON e.id = o.exercise_id AND o.user_id = l.user_id
-            WHERE (l.session_id = ? OR (l.date = ? AND l.session_id IS NULL)) AND l.user_id = ?
+            WHERE l.session_id = ? AND l.user_id = ?
             ORDER BY l.id ASC
         `, [id, session.date, session.user_id], (err, logs) => {
             if (err) return res.status(500).json({ error: err.message });
@@ -402,18 +402,15 @@ app.put('/api/exercises/:id', (req, res) => {
                 [userId || 1, id, video_url, image_url],
                 function (err) {
                     if (err) {
-                        // If ON CONFLICT isn't supported by the user's SQLite version, try fallback
-                        if (err.message.includes('syntax error')) {
-                            db.run("INSERT OR REPLACE INTO exercise_overrides (user_id, exercise_id, video_url, image_url) VALUES (?, ?, ?, ?)",
-                                [userId || 1, id, video_url, image_url],
-                                (err2) => {
-                                    if (err2) return res.status(500).json({ error: err2.message });
-                                    res.json({ message: 'Exercise override saved' });
-                                }
-                            );
-                            return;
-                        }
-                        return res.status(500).json({ error: err.message });
+                        // Fallback for strict SQLite or other errors
+                        db.run("INSERT OR REPLACE INTO exercise_overrides (user_id, exercise_id, video_url, image_url) VALUES (?, ?, ?, ?)",
+                            [userId || 1, id, video_url, image_url],
+                            (err2) => {
+                                if (err2) return res.status(500).json({ error: err2.message });
+                                res.json({ message: 'Exercise override saved' });
+                            }
+                        );
+                        return;
                     }
                     res.json({ message: 'Exercise override saved' });
                 }

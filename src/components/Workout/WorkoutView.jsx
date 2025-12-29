@@ -6,6 +6,7 @@ import { api } from '../../services/api';
 import WorkoutSession from './WorkoutSession';
 import WorkoutSummary from './WorkoutSummary';
 import SelectExerciseModal from './SelectExerciseModal';
+import ExerciseModal from './ExerciseModal';
 import SetTracker from './SetTracker';
 
 export default function WorkoutView({ user, template, onFinish }) {
@@ -18,6 +19,7 @@ export default function WorkoutView({ user, template, onFinish }) {
     // UI State
     const [showAddExercise, setShowAddExercise] = useState(false);
     const [showSummary, setShowSummary] = useState(false);
+    const [viewingExercise, setViewingExercise] = useState(null);
     const [summaryData, setSummaryData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -260,13 +262,19 @@ export default function WorkoutView({ user, template, onFinish }) {
                         className="glass-panel"
                         style={{ padding: '0', overflow: 'hidden' }}
                     >
-                        {/* Exercise Header */}
                         <div style={{
                             padding: '16px',
                             background: 'rgba(255,255,255,0.03)',
                             display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div
+                                onClick={() => setViewingExercise({
+                                    ...ex,
+                                    sets: ex.target_sets || ex.sets.length,
+                                    reps: ex.target_reps
+                                })}
+                                style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+                            >
                                 <div style={{
                                     width: '40px', height: '40px', borderRadius: '8px',
                                     background: 'rgba(255,255,255,0.05)', color: 'var(--primary)',
@@ -275,6 +283,7 @@ export default function WorkoutView({ user, template, onFinish }) {
                                     <Dumbbell size={20} />
                                 </div>
                                 <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>{ex.name}</h3>
+                                <Info size={16} style={{ color: 'var(--text-muted)', opacity: 0.7 }} />
                             </div>
                             <button
                                 onClick={() => handleRemoveExercise(exIndex)}
@@ -372,6 +381,13 @@ export default function WorkoutView({ user, template, onFinish }) {
                 <SelectExerciseModal
                     onClose={() => setShowAddExercise(false)}
                     onSelect={handleAddExercise}
+                />
+            )}
+
+            {viewingExercise && (
+                <ExerciseModal
+                    exercise={viewingExercise}
+                    onClose={() => setViewingExercise(null)}
                 />
             )}
 

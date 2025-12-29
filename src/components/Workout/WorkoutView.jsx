@@ -135,13 +135,38 @@ export default function WorkoutView({ user, template, onFinish }) {
         }
     };
 
-    const handleUpdateSet = (exerciseIndex, setIndex, data) => {
+    const handleUpdateSet = async (exerciseIndex, setIndex, data) => {
         const updated = [...activeExercises];
         updated[exerciseIndex].sets[setIndex] = {
             ...updated[exerciseIndex].sets[setIndex],
             ...data
         };
         setActiveExercises(updated);
+
+        // Sync with Backend
+        const exercise = updated[exerciseIndex];
+        const set = updated[exerciseIndex].sets[setIndex];
+
+        // Use session date
+        const dateStr = sessionStartTime ? sessionStartTime.split('T')[0] : new Date().toISOString().split('T')[0];
+
+        // Only save if we have meaningful data or it is explicitly completed
+        if (set.weight || set.reps || set.completed) {
+            try {
+                await api.saveLog({
+                    date: dateStr,
+                    exercise_id: exercise.id,
+                    set_number: set.setNum,
+                    weight: set.weight,
+                    reps: set.reps,
+                    completed: set.completed ? 1 : 0,
+                    set_type: set.type,
+                    rpe: set.rpe
+                });
+            } catch (e) {
+                console.error("Failed to save log", e);
+            }
+        }
     };
 
     const handleFinishWorkout = async (timerData) => {
@@ -166,7 +191,6 @@ export default function WorkoutView({ user, template, onFinish }) {
                 }
             });
 
-            // Assuming we have muscle data in exercise object, if not we skip
             if (ex.muscle_group) muscles.add(ex.muscle_group);
 
             return {
@@ -175,10 +199,9 @@ export default function WorkoutView({ user, template, onFinish }) {
                 volume: exVolume,
                 maxWeight,
                 maxReps,
-                // These are placeholders for now, would typically compare with history
                 isPR: false,
                 delta: 0,
-                recommendation: "Keep pushing!"
+                recommendation: "Just keep going!"
             };
         });
 
@@ -188,14 +211,14 @@ export default function WorkoutView({ user, template, onFinish }) {
             endTime: new Date().toISOString(),
             duration: timerData.durationMinutes,
             volume: totalVolume,
-            calories: Math.floor(timerData.durationMinutes * 5), // Estimate
+            calories: Math.floor(timerData.durationMinutes * 5),
             efficiency: {
                 avgTimePerExercise: activeExercises.length > 0 ? (timerData.durationMinutes / activeExercises.length).toFixed(1) : 0,
                 completedSets: setsCompleted
             },
             muscles: Array.from(muscles),
             exerciseBreakdown,
-            sessionId: sessionId // Use if we had a backend ID created at start
+            sessionId: sessionId
         };
 
         // Save to Backend
@@ -204,12 +227,17 @@ export default function WorkoutView({ user, template, onFinish }) {
             const res = await api.saveSession({
                 userId,
                 name: workoutName,
-                startTime: sessionStartTime,
-                endTime: new Date().toISOString(),
-                exercises: activeExercises
+                workout_name: workoutName, // Backend expects workout_name
+                date: sessionStartTime ? sessionStartTime.split('T')[0] : new Date().toISOString().split('T')[0],
+                start_time: sessionStartTime,
+                end_time: new Date().toISOString(),
+                duration_minutes: timerData.durationMinutes,
+                calories_burned: Math.floor(timerData.durationMinutes * 5),
+                total_volume: totalVolume,
+                difficulty: 'Intermediate' // Default, user can update later
             });
-            if (res && res.sessionId) {
-                finishedData.sessionId = res.sessionId;
+            if (res && res.id) {
+                finishedData.sessionId = res.id;
             }
         } catch (e) {
             console.error("Failed to save session", e);

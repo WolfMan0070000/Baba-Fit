@@ -450,8 +450,8 @@ app.put('/api/exercises/:id', (req, res) => {
                 `INSERT INTO exercise_overrides (user_id, exercise_id, video_url, image_url)
                  VALUES (?, ?, ?, ?)
                  ON CONFLICT(user_id, exercise_id) DO UPDATE SET
-                 video_url = COALESCE(excluded.video_url, video_url),
-                 image_url = COALESCE(excluded.image_url, image_url)`,
+                 video_url = COALESCE(excluded.video_url, exercise_overrides.video_url),
+                 image_url = COALESCE(excluded.image_url, exercise_overrides.image_url)`,
                 [userId || 1, id, video_url, image_url],
                 function (err) {
                     if (err) {
@@ -466,6 +466,7 @@ app.put('/api/exercises/:id', (req, res) => {
                             );
                             return;
                         }
+                        console.error('Error saving exercise override:', err.message);
                         return res.status(500).json({ error: err.message });
                     }
                     res.json({ message: 'Exercise override saved' });

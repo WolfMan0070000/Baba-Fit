@@ -41,6 +41,16 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  /* Remove tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+  /* Disable text selection for app-like feel */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* Disable touch callout (long-press menu) */
+  -webkit-touch-callout: none;
 }
 
 html,
@@ -61,6 +71,12 @@ body {
     radial-gradient(circle at 100% 100%, rgba(249, 212, 35, 0.03) 0%, transparent 50%);
   overflow-x: hidden;
   line-height: 1.5;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+[dir="rtl"] {
+  font-family: 'Outfit', 'Tahoma', 'Arial', sans-serif;
+  letter-spacing: 0;
 }
 
 /* Scrollbar */
@@ -91,6 +107,18 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 16px));
   min-height: 100vh;
   position: relative;
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 800px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1100px;
+  }
 }
 
 /* Glass Panels */
@@ -199,6 +227,11 @@ select,
 textarea {
   font-size: 16px !important;
   /* Forces 16px to prevent iOS auto-zoom */
+  /* Re-enable text selection in inputs */
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
 }
 
 .input-elegant {

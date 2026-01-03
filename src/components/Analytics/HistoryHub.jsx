@@ -9,8 +9,10 @@ import PRDashboard from './PRDashboard';
 import WeeklyCoach from './WeeklyCoach';
 import { api } from '../../services/api';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function HistoryHub({ user }) {
+    const { t } = useLanguage();
     const [exercises, setExercises] = useState([]);
     const [selectedExId, setSelectedExId] = useState(null);
     const [volumeData, setVolumeData] = useState([]);
@@ -89,7 +91,7 @@ export default function HistoryHub({ user }) {
             style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px' }}
         >
             <motion.div variants={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className="text-gradient" style={{ fontSize: '1.5rem', marginLeft: '8px' }}>History Hub</h2>
+                <h2 className="text-gradient" style={{ fontSize: '1.5rem', marginLeft: '8px' }}>{t('history_hub')}</h2>
                 <button
                     onClick={handleExport}
                     style={{
@@ -97,7 +99,7 @@ export default function HistoryHub({ user }) {
                         background: 'rgba(255,255,255,0.1)', border: '1px solid var(--border-light)', color: 'var(--text-main)'
                     }}
                 >
-                    Export JSON
+                    {t('export_json')}
                 </button>
             </motion.div>
 
@@ -109,9 +111,9 @@ export default function HistoryHub({ user }) {
 
             <motion.div variants={item}><PRDashboard /></motion.div>
 
-            <motion.div variants={item} className="glass-panel" style={{ padding: '16px' }}>
+            <motion.div variants={item} className="glass-panel" style={{ padding: '20px' }}>
                 <div style={{ marginBottom: '16px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>Select Exercise for Trends</label>
+                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '8px' }}>{t('select_exercise_trends')}</label>
                     <select
                         value={selectedExId || ''}
                         onChange={(e) => setSelectedExId(e.target.value)}
@@ -123,19 +125,19 @@ export default function HistoryHub({ user }) {
                     </select>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <OneRepMaxChart
-                        title="Estimated 1RM Evolution"
+                        title={t('orm_evolution')}
                         data={oneRepMaxData}
                         color="var(--primary)"
                     />
                     <ProgressionChart
-                        title="Max Weight Strength"
+                        title={t('max_weight_strength')}
                         data={maxWeightData}
                         color="var(--accent)"
                     />
                     <ProgressionChart
-                        title="Total Volume"
+                        title={t('total_volume')}
                         data={volumeData}
                         color="var(--success)"
                     />

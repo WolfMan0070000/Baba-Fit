@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Check, Save, Flame, AlertCircle, TrendingDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../context/LanguageContext';
 
 export default function SetTracker({ setNum, defaultReps, onSave, initialData, ghostData }) {
@@ -12,20 +13,17 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
     const [setType, setSetType] = useState(initialData?.set_type || 'normal'); // normal, warmup, failure, drop
     const [rpe, setRpe] = useState(initialData?.rpe || '');
 
-    const [isSaved, setIsSaved] = useState(false);
     const [isUserModified, setIsUserModified] = useState(false);
     const [rpeError, setRpeError] = useState(false);
+    const [saveStatus, setSaveStatus] = useState('idle'); // idle, saving, saved
+    const saveTimeoutRef = useRef(null);
 
-    // Auto-fill from Previous Set (Smart Logic)
     // Auto-fill from Previous Set (Smart Logic)
     useEffect(() => {
         // Ghost Only Mode: We do NOT auto-fill state immediately.
-        // The values are shown as placeholders.
-        // User must click/focus to commit the ghost values (handled by handleFocus).
     }, [ghostData, initialData, isUserModified]);
 
     const handleFocus = (field) => {
-        // If empty and ghostData exists, commit it on click
         if (!isUserModified && ghostData) {
             if (field === 'weight' && !weight && ghostData.weight) setWeight(ghostData.weight);
             if (field === 'reps' && !reps && ghostData.reps) setReps(ghostData.reps);
@@ -40,15 +38,41 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
             setCompleted(initialData.completed);
             setSetType(initialData.set_type || 'normal');
             setRpe(initialData.rpe || '');
+            // Only show 'saved' if user has entered BOTH weight AND reps
+            const hasCompleteData = initialData.weight && initialData.reps;
+            setSaveStatus(hasCompleteData ? 'saved' : 'idle');
         } else {
-            // Logs cleared (New Session), reset fields
             setWeight('');
             setReps('');
             setCompleted(false);
             setSetType('normal');
             setRpe('');
+            setSaveStatus('idle');
         }
     }, [initialData]);
+
+    const debouncedSave = (data) => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        setSaveStatus('saving');
+
+        saveTimeoutRef.current = setTimeout(() => {
+            onSave(data);
+            // Only show 'saved' if both weight and reps are filled
+            const hasCompleteData = data.weight && data.reps;
+            setSaveStatus(hasCompleteData ? 'saved' : 'idle');
+        }, 800); // 800ms debounce for smoother feeling
+    };
+
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const handleChange = (field, value) => {
         setIsUserModified(true);
@@ -65,52 +89,61 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
             setRpe(value);
         }
 
-        // Debounced Save / Immediate Update for Persistence
         const newData = {
             weight: field === 'weight' ? value : weight,
             reps: field === 'reps' ? value : reps,
-            completed: field === 'completed' ? value : completed,
+            completed: completed,
             set_type: setType,
             rpe: field === 'rpe' ? value : rpe
         };
 
-        // Don't mark completed unless explicitly done or both filled? 
-        // We'll keep completed as explicit action or blur
-        onSave(newData);
+        debouncedSave(newData);
     };
 
-    const handleSave = (forceComplete = false) => {
-        const isComplete = forceComplete ? true : completed;
-        if (forceComplete) setCompleted(true);
-
-        onSave({ weight, reps, completed: isComplete, set_type: setType, rpe });
-
-        if (forceComplete) {
-            setIsSaved(true);
-            setTimeout(() => setIsSaved(false), 2000);
+    const handleBlur = () => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
         }
+
+        onSave({
+            weight,
+            reps,
+            completed,
+            set_type: setType,
+            rpe
+        });
+        // Only show 'saved' if both weight and reps are filled
+        const hasCompleteData = weight && reps;
+        setSaveStatus(hasCompleteData ? 'saved' : 'idle');
     };
 
     const toggleCompleted = () => {
         const newState = !completed;
         setCompleted(newState);
         onSave({ weight, reps, completed: newState, set_type: setType, rpe });
+        // Only show 'saved' if both weight and reps are filled
+        const hasCompleteData = weight && reps;
+        setSaveStatus(hasCompleteData ? 'saved' : 'idle');
     };
 
     const toggleTag = (tag) => {
-        setSetType(prev => prev === tag ? 'normal' : tag);
+        const newType = setType === tag ? 'normal' : tag;
+        setSetType(newType);
+        onSave({ weight, reps, completed, set_type: newType, rpe });
+        // Only show 'saved' if both weight and reps are filled
+        const hasCompleteData = weight && reps;
+        setSaveStatus(hasCompleteData ? 'saved' : 'idle');
     };
 
     const getTagColor = () => {
         switch (setType) {
             case 'warmup': return 'var(--accent)';
-            case 'failure': return '#ef4444'; // Red
-            case 'drop': return '#8b5cf6'; // Purple
+            case 'failure': return '#ef4444';
+            case 'drop': return '#8b5cf6';
             default: return 'transparent';
         }
     };
 
-    // Calculate Ghost Values
     const ghostWeight = ghostData ? ghostData.weight : '';
     const ghostReps = ghostData ? ghostData.reps : defaultReps;
 
@@ -127,7 +160,6 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                 gap: '8px',
                 alignItems: 'center',
             }}>
-                {/* Set Number Indicator (Toggle Complete) */}
                 <div
                     onClick={toggleCompleted}
                     style={{
@@ -148,20 +180,18 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                     {completed ? <Check size={20} strokeWidth={3} /> : (setType === 'warmup' ? 'W' : setType === 'drop' ? 'D' : setType === 'failure' ? 'F' : setNum)}
                 </div>
 
-                {/* Weight Input */}
                 <div style={{ position: 'relative' }}>
                     <input
                         className="input-compact"
                         type="number"
-                        placeholder={ghostWeight ? `${ghostWeight} kg` : 'kg'}
+                        placeholder={ghostWeight ? `${ghostWeight} ${t('kg')}` : t('kg')}
                         value={weight}
                         onChange={(e) => handleChange('weight', e.target.value)}
                         onFocus={() => handleFocus('weight')}
-                        onBlur={() => handleSave(false)}
+                        onBlur={handleBlur}
                     />
                 </div>
 
-                {/* Reps Input */}
                 <div style={{ position: 'relative' }}>
                     <input
                         className="input-compact"
@@ -170,20 +200,19 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                         value={reps}
                         onChange={(e) => handleChange('reps', e.target.value)}
                         onFocus={() => handleFocus('reps')}
-                        onBlur={() => handleSave(false)}
+                        onBlur={handleBlur}
                     />
                 </div>
 
-                {/* RPE Input */}
                 <div style={{ position: 'relative' }}>
                     <input
                         className="input-compact"
                         type="number"
-                        placeholder={ghostData?.rpe || "RPE"}
+                        placeholder={ghostData?.rpe || t('rpe_label')}
                         value={rpe}
                         onChange={(e) => handleChange('rpe', e.target.value)}
                         onFocus={() => handleFocus('rpe')}
-                        onBlur={() => handleSave(false)}
+                        onBlur={handleBlur}
                         style={{
                             borderColor: rpeError ? '#ef4444' : 'var(--border-light)',
                             color: rpeError ? '#ef4444' : 'var(--text-secondary)',
@@ -201,33 +230,34 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                             whiteSpace: 'nowrap',
                             pointerEvents: 'none'
                         }}>
-                            Max 10
+                            {t('max_10')}
                         </div>
                     )}
                 </div>
 
-                {/* Save Button */}
-                <button
-                    onClick={() => handleSave(true)}
+                <motion.div
                     style={{
                         height: '40px',
                         width: '40px',
-                        padding: 0,
-                        border: 'none',
-                        borderRadius: '8px',
-                        background: completed ? 'var(--primary-glow)' : 'transparent',
-                        color: completed ? 'var(--primary)' : 'var(--text-muted)',
-                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        background: 'transparent'
+                    }}
+                    animate={{
+                        color: saveStatus === 'saved'
+                            ? 'var(--primary)'
+                            : (saveStatus === 'saving' ? '#fbbf24' : 'var(--text-muted)')
+                    }}
+                    transition={{
+                        duration: 0.6,
+                        ease: [0.4, 0, 0.2, 1] // Custom cubic-bezier for smoother transition
                     }}
                 >
-                    {isSaved ? <Check size={20} /> : <Save size={20} />}
-                </button>
+                    <Save size={18} />
+                </motion.div>
             </div>
 
-            {/* Tags Row */}
             <div style={{ display: 'flex', gap: '8px', marginTop: '8px', marginLeft: '48px' }}>
                 <button
                     onClick={() => toggleTag('warmup')}
@@ -236,7 +266,7 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                         background: setType === 'warmup' ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
                         color: setType === 'warmup' ? '#000' : 'var(--text-muted)'
                     }}>
-                    Warmup
+                    {t('warmup')}
                 </button>
                 <button
                     onClick={() => toggleTag('drop')}
@@ -245,7 +275,7 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                         background: setType === 'drop' ? '#8b5cf6' : 'rgba(255,255,255,0.05)',
                         color: setType === 'drop' ? '#fff' : 'var(--text-muted)'
                     }}>
-                    Drop
+                    {t('drop_set')}
                 </button>
                 <button
                     onClick={() => toggleTag('failure')}
@@ -254,7 +284,7 @@ export default function SetTracker({ setNum, defaultReps, onSave, initialData, g
                         background: setType === 'failure' ? '#ef4444' : 'rgba(255,255,255,0.05)',
                         color: setType === 'failure' ? '#fff' : 'var(--text-muted)'
                     }}>
-                    Failure
+                    {t('failure')}
                 </button>
             </div>
         </div>

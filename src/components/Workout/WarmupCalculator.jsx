@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { Flame, X } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function WarmupCalculator({ isOpen, onClose, targetWeight }) {
+    const { t, isRTL } = useLanguage();
     if (!isOpen) return null;
 
     const calculateWarmup = (target) => {
@@ -18,30 +19,28 @@ export default function WarmupCalculator({ isOpen, onClose, targetWeight }) {
     return (
         <div style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
+            top: 0, left: 0, right: 0, bottom: 0,
             background: 'rgba(0,0,0,0.92)',
             zIndex: 2000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '20px'
+            padding: '20px',
+            direction: isRTL ? 'rtl' : 'ltr'
         }}>
             <div className="glass-panel-elevated animate-slide-up" style={{ width: '100%', maxWidth: '400px', padding: '24px', position: 'relative' }}>
-                <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-muted)' }}>
+                <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: isRTL ? 'auto' : '16px', left: isRTL ? '16px' : 'auto', background: 'none', border: 'none', color: 'var(--text-muted)' }}>
                     <X size={24} />
                 </button>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
                     <Flame color="var(--accent)" />
-                    <h3 className="text-gradient">Warm-up Assistant</h3>
+                    <h3 className="text-gradient">{t('warmup_assistant')}</h3>
                 </div>
 
                 <div className="glass-panel" style={{ padding: '16px', marginBottom: '24px', textAlign: 'center' }}>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Target Working Set</p>
-                    <p style={{ fontSize: '1.5rem', fontWeight: 800 }}>{targetWeight} kg</p>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>{t('target_working_set')}</p>
+                    <p style={{ fontSize: '1.5rem', fontWeight: 800 }}>{targetWeight} {t('kg')}</p>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -52,12 +51,12 @@ export default function WarmupCalculator({ isOpen, onClose, targetWeight }) {
                             borderRadius: '12px',
                             border: '1px solid var(--border-light)'
                         }}>
-                            <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <span style={{ color: 'var(--accent)', fontWeight: 700, fontSize: '0.9rem' }}>{set.pct}%</span>
-                                <span style={{ marginLeft: '12px', fontSize: '1.1rem', fontWeight: 600 }}>{set.weight} kg</span>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>{set.weight} {t('kg')}</span>
                             </div>
                             <div style={{ color: 'var(--text-secondary)' }}>
-                                {set.reps} reps
+                                {set.reps} {t('reps_label')}
                             </div>
                         </div>
                     ))}
@@ -68,7 +67,7 @@ export default function WarmupCalculator({ isOpen, onClose, targetWeight }) {
                     onClick={onClose}
                     style={{ width: '100%', marginTop: '32px' }}
                 >
-                    Ready to Lift
+                    {t('ready_to_lift')}
                 </button>
             </div>
         </div>

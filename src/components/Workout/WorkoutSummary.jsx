@@ -1,9 +1,8 @@
 import { Share2, X, CheckCircle, Camera, Award, Zap, Target, BarChart2, Smile, Meh, Frown, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '../../context/LanguageContext';
-import { API_BASE_URL } from '../../config';
 import { api } from '../../services/api';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export default function WorkoutSummary({ isOpen, onClose, data }) {
     const { t, isRTL } = useLanguage();
@@ -44,7 +43,8 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
             background: 'rgba(0,0,0,0.95)',
             zIndex: 2000,
             overflowY: 'auto',
-            padding: '20px 10px'
+            padding: '20px 10px',
+            direction: isRTL ? 'rtl' : 'ltr'
         }}>
             <motion.div
                 variants={container}
@@ -62,7 +62,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                     boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
                 }}
             >
-                <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', padding: '8px', borderRadius: '50%', cursor: 'pointer' }}>
+                <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: isRTL ? 'auto' : '16px', left: isRTL ? '16px' : 'auto', background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', padding: '8px', borderRadius: '50%', cursor: 'pointer' }}>
                     <X size={20} />
                 </button>
 
@@ -78,7 +78,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                     >
                         <CheckCircle size={64} color="var(--primary)" style={{ marginBottom: '16px', filter: 'drop-shadow(0 0 10px var(--primary))' }} />
                     </motion.div>
-                    <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '4px' }}>Workout Completed!</h2>
+                    <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '4px' }}>{t('workout_completed')}</h2>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>{data.workoutName}</p>
                 </div>
 
@@ -86,18 +86,22 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '24px' }}>
                     <div className="glass-panel" style={{ padding: '16px 8px', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
                         <Zap size={18} color="var(--accent)" style={{ marginBottom: '8px' }} />
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Volume</div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{(data.volume / 1000).toFixed(1)}t</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('volume')}</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>
+                            {data.volume >= 1000
+                                ? `${(data.volume / 1000).toFixed(1)}t`
+                                : `${Math.round(data.volume)}${t('kg')}`}
+                        </div>
                     </div>
                     <div className="glass-panel" style={{ padding: '16px 8px', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
                         <BarChart2 size={18} color="var(--primary)" style={{ marginBottom: '8px' }} />
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Calories</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('calories')}</div>
                         <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{data.calories}</div>
                     </div>
                     <div className="glass-panel" style={{ padding: '16px 8px', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
                         <Clock size={18} color="var(--primary)" style={{ marginBottom: '8px' }} />
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Duration</div>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{data.duration}m</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('duration')}</div>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800 }}>{data.duration}{t('min_label')}</div>
                     </div>
                 </div>
 
@@ -106,7 +110,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                     <motion.div variants={item} className="glass-panel" style={{ padding: '16px', marginBottom: '24px', background: 'rgba(0, 242, 254, 0.05)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                             <Target size={18} color="var(--primary)" />
-                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Muscles Targeted</span>
+                            <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{t('muscles_targeted')}</span>
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                             {data.muscles.map(m => (
@@ -118,7 +122,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                                     color: 'var(--primary)',
                                     border: '1px solid rgba(0, 242, 254, 0.3)'
                                 }}>
-                                    {m}
+                                    {t('muscle_' + m.toLowerCase())}
                                 </span>
                             ))}
                         </div>
@@ -130,7 +134,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                     <>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <Award size={20} color="var(--accent)" />
-                            Achievements & Highlights
+                            {t('achievements_highlights')}
                         </h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
@@ -149,29 +153,29 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                                 >
                                     {ex.isPR && (
                                         <div style={{
-                                            position: 'absolute', top: '0', right: '0',
+                                            position: 'absolute', top: '0', right: isRTL ? 'auto' : '0', left: isRTL ? '0' : 'auto',
                                             background: 'var(--accent)', color: '#000',
                                             padding: '2px 10px', fontSize: '0.65rem',
-                                            fontWeight: 900, borderBottomLeftRadius: '8px'
+                                            fontWeight: 900, borderBottomLeftRadius: isRTL ? '0' : '8px', borderBottomRightRadius: isRTL ? '8px' : '0'
                                         }}>
-                                            NEW RECORD
+                                            {t('new_record')}
                                         </div>
                                     )}
 
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
                                         <div style={{ fontWeight: 700, color: '#fff' }}>{ex.name}</div>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 600 }}>
-                                            {ex.avgWeight} kg avg
+                                            {ex.avgWeight} {t('kg')} {t('avg_label')}
                                         </div>
                                     </div>
 
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem' }}>
                                         <div style={{ color: 'var(--text-muted)' }}>
-                                            Max Reps: <span style={{ color: '#fff', fontWeight: 700 }}>{ex.maxReps}</span>
+                                            {t('max_reps')}: <span style={{ color: '#fff', fontWeight: 700 }}>{ex.maxReps}</span>
                                         </div>
                                         {ex.delta > 0 && (
                                             <div style={{ color: '#10b981', fontWeight: 700 }}>
-                                                +{ex.delta}kg since last session
+                                                +{ex.delta}{t('kg')} {t('since_last_session')}
                                             </div>
                                         )}
                                     </div>
@@ -182,10 +186,11 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                                         padding: '8px 12px',
                                         background: 'rgba(245, 158, 11, 0.1)',
                                         borderRadius: '8px',
-                                        borderLeft: '3px solid var(--accent)',
+                                        borderLeft: isRTL ? 'none' : '3px solid var(--accent)',
+                                        borderRight: isRTL ? '3px solid var(--accent)' : 'none',
                                         fontSize: '0.8rem'
                                     }}>
-                                        <span style={{ color: 'var(--accent)', fontWeight: 700 }}>Next Week: </span>
+                                        <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{t('next_week')}: </span>
                                         <span style={{ color: 'var(--text-secondary)' }}>{ex.recommendation}</span>
                                     </div>
                                 </motion.div>
@@ -199,12 +204,12 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                     <motion.div variants={item} className="glass-panel" style={{ padding: '16px', marginBottom: '32px', background: 'rgba(255,255,255,0.02)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Efficiency</div>
-                                <div style={{ fontSize: '1rem', fontWeight: 700 }}>{data.efficiency.avgTimePerExercise} min / exercise</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('efficiency')}</div>
+                                <div style={{ fontSize: '1rem', fontWeight: 700 }}>{data.efficiency.avgTimePerExercise} {t('min_per_exercise')}</div>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sets Completed</div>
-                                <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>{data.efficiency.completedSets} Hits</div>
+                            <div style={{ textAlign: isRTL ? 'left' : 'right' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('sets_completed')}</div>
+                                <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>{data.efficiency.completedSets} {t('hits_label')}</div>
                             </div>
                         </div>
                     </motion.div>
@@ -212,7 +217,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
 
                 {/* Feedback Loop */}
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>How did this workout feel?</p>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>{t('how_feel')}</p>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
                         <button
                             onClick={() => handleDifficultySelect('easy')}
@@ -226,7 +231,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                             }}
                         >
                             <Smile color={difficulty === 'easy' ? '#10b981' : 'var(--text-muted)'} />
-                            <span style={{ fontSize: '0.75rem' }}>Easy</span>
+                            <span style={{ fontSize: '0.75rem' }}>{t('diff_easy')}</span>
                         </button>
                         <button
                             onClick={() => handleDifficultySelect('moderate')}
@@ -240,7 +245,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                             }}
                         >
                             <Meh color={difficulty === 'moderate' ? 'var(--accent)' : 'var(--text-muted)'} />
-                            <span style={{ fontSize: '0.75rem' }}>Moderate</span>
+                            <span style={{ fontSize: '0.75rem' }}>{t('diff_moderate')}</span>
                         </button>
                         <button
                             onClick={() => handleDifficultySelect('hard')}
@@ -254,7 +259,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                             }}
                         >
                             <Frown color={difficulty === 'hard' ? '#ef4444' : 'var(--text-muted)'} />
-                            <span style={{ fontSize: '0.75rem' }}>Hard</span>
+                            <span style={{ fontSize: '0.75rem' }}>{t('diff_hard')}</span>
                         </button>
                     </div>
                 </div>
@@ -263,11 +268,11 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button className="btn btn-secondary" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         <Camera size={18} />
-                        Photo
+                        {t('btn_photo')}
                     </button>
                     <button className="btn btn-primary" style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         <Share2 size={18} />
-                        Share Results
+                        {t('btn_share')}
                     </button>
                 </div>
 
@@ -275,10 +280,3 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
         </div>
     );
 }
-
-const getUserId = () => {
-    try {
-        const user = localStorage.getItem('gym_user');
-        return user ? JSON.parse(user).id : 1;
-    } catch { return 1; }
-};

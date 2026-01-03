@@ -2,13 +2,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Plus, MoreVertical, Trash2, Info, Dumbbell, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
 import WorkoutSession from './WorkoutSession';
 import WorkoutSummary from './WorkoutSummary';
 import SelectExerciseModal from './SelectExerciseModal';
 import SetTracker from './SetTracker';
+import ConfirmModal from '../Common/ConfirmModal';
 
 export default function WorkoutView({ user, template, onFinish }) {
+    const { t } = useLanguage();
     // Core State
     const [activeExercises, setActiveExercises] = useState([]);
     const [sessionStartTime, setSessionStartTime] = useState(null);
@@ -20,6 +23,7 @@ export default function WorkoutView({ user, template, onFinish }) {
     const [showSummary, setShowSummary] = useState(false);
     const [summaryData, setSummaryData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
     // Initialize Session
     useEffect(() => {
@@ -101,7 +105,7 @@ export default function WorkoutView({ user, template, onFinish }) {
     };
 
     const handleRemoveExercise = (index) => {
-        if (window.confirm('Remove this exercise?')) {
+        if (window.confirm(t('remove_exercise_confirm'))) {
             const updated = [...activeExercises];
             updated.splice(index, 1);
             setActiveExercises(updated);
@@ -143,7 +147,56 @@ export default function WorkoutView({ user, template, onFinish }) {
     };
 
     const handleFinishWorkout = async (timerData) => {
-        // Compute Summary Data
+        const today = new Date().toISOString().split('T')[0];
+        const userId = user?.id || 1;
+
+        // Save workout logs first
+        try {
+            console.log('Saving workout logs...');
+            for (const ex of activeExercises) {
+                for (const set of ex.sets) {
+                    // Save each set to database
+                    await api.saveLog({
+                        date: today,
+                        exercise_id: ex.id,  // Use numeric ID directly
+                        set_number: set.setNum,
+                        weight: set.weight || null,
+                        reps: set.reps || null,
+                        completed: set.completed ? 1 : 0,
+                        set_type: set.type || 'normal',
+                        rpe: set.rpe || null,
+                        userId: userId
+                    });
+                }
+            }
+            console.log('All logs saved successfully');
+        } catch (error) {
+            console.error('Error saving logs:', error);
+            alert('Failed to save workout logs. Please try again.');
+            return;
+        }
+
+        // Now create the session (backend will auto-calculate volume)
+        let savedSession = null;
+        try {
+            console.log('Creating session...');
+            const sessionResponse = await api.saveSession({
+                date: today,
+                start_time: sessionStartTime,
+                end_time: new Date().toISOString(),
+                duration_minutes: timerData.durationMinutes,
+                calories_burned: Math.floor(timerData.durationMinutes * 5),
+                workout_name: workoutName,
+                userId: userId
+            });
+            savedSession = sessionResponse;
+            console.log('Session created:', sessionResponse);
+        } catch (error) {
+            console.error('Error saving session:', error);
+            alert('Workout logs saved but failed to create session summary.');
+        }
+
+        // Compute Summary Data for UI
         let totalVolume = 0;
         let setsCompleted = 0;
         const muscles = new Set();
@@ -164,7 +217,6 @@ export default function WorkoutView({ user, template, onFinish }) {
                 }
             });
 
-            // Assuming we have muscle data in exercise object, if not we skip
             if (ex.muscle_group) muscles.add(ex.muscle_group);
 
             return {
@@ -173,7 +225,6 @@ export default function WorkoutView({ user, template, onFinish }) {
                 volume: exVolume,
                 maxWeight,
                 maxReps,
-                // These are placeholders for now, would typically compare with history
                 isPR: false,
                 delta: 0,
                 recommendation: "Keep pushing!"
@@ -185,33 +236,16 @@ export default function WorkoutView({ user, template, onFinish }) {
             startTime: sessionStartTime,
             endTime: new Date().toISOString(),
             duration: timerData.durationMinutes,
-            volume: totalVolume,
-            calories: Math.floor(timerData.durationMinutes * 5), // Estimate
+            volume: savedSession?.total_volume || totalVolume, // Use backend calculated value if available
+            calories: Math.floor(timerData.durationMinutes * 5),
             efficiency: {
                 avgTimePerExercise: activeExercises.length > 0 ? (timerData.durationMinutes / activeExercises.length).toFixed(1) : 0,
                 completedSets: setsCompleted
             },
             muscles: Array.from(muscles),
             exerciseBreakdown,
-            sessionId: sessionId // Use if we had a backend ID created at start
+            sessionId: savedSession?.id || null
         };
-
-        // Save to Backend
-        try {
-            const userId = user?.id || 1;
-            const res = await api.saveSession({
-                userId,
-                name: workoutName,
-                startTime: sessionStartTime,
-                endTime: new Date().toISOString(),
-                exercises: activeExercises
-            });
-            if (res && res.sessionId) {
-                finishedData.sessionId = res.sessionId;
-            }
-        } catch (e) {
-            console.error("Failed to save session", e);
-        }
 
         setSummaryData(finishedData);
         setShowSummary(true);
@@ -223,30 +257,91 @@ export default function WorkoutView({ user, template, onFinish }) {
         if (onFinish) onFinish();
     };
 
-    if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>Loading Workout...</div>;
+    const handleCancelWorkout = () => {
+        setShowCancelConfirm(true);
+    };
+
+    const confirmCancel = () => {
+        localStorage.removeItem('active_workout_session');
+        setShowCancelConfirm(false);
+        if (onFinish) onFinish();
+    };
+
+    if (loading) return <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>{t('loading_workout')}</div>;
 
     return (
         <div style={{ paddingBottom: '100px', minHeight: '100vh', position: 'relative' }}>
-            {/* Header */}
+            {/* Floating Header Card */}
             <div style={{
-                padding: '20px 16px',
-                position: 'sticky', top: 0, zIndex: 10,
-                background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                borderBottom: '1px solid var(--border-light)'
+                position: 'sticky',
+                top: '10px',
+                zIndex: 100,
+                margin: '10px 16px',
+                padding: '20px',
+                background: 'rgba(20, 20, 20, 0.75)',
+                backdropFilter: 'blur(30px)',
+                WebkitBackdropFilter: 'blur(30px)',
+                borderRadius: '24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 12px 32px rgba(0,0,0,0.5)'
             }}>
                 <div style={{ flex: 1 }}>
-                    <h2 className="text-gradient" style={{ margin: 0, fontSize: '1.4rem' }}>{workoutName}</h2>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {activeExercises.length} Exercises • In Progress
-                    </p>
+                    <h2 className="text-gradient" style={{
+                        margin: 0,
+                        fontSize: '1.6rem',
+                        fontWeight: 900,
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1.1
+                    }}>
+                        {workoutName}
+                    </h2>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        marginTop: '8px'
+                    }}>
+                        <div style={{
+                            fontSize: '0.85rem',
+                            color: 'var(--text-secondary)',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                        }}>
+                            <span>{activeExercises.length} {t('exercises')}</span>
+                            <span style={{ opacity: 0.2, fontSize: '1.2rem' }}>|</span>
+                            <span style={{ color: 'var(--primary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <div className="pulse" style={{ width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%', boxShadow: '0 0 8px var(--primary)' }}></div>
+                                {t('in_progress')}...
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 <button
                     onClick={() => setShowAddExercise(true)}
-                    className="btn-icon"
-                    style={{ background: 'var(--primary)', color: '#000' }}
+                    className="pulse-glow"
+                    style={{
+                        background: 'var(--primary)',
+                        color: '#000',
+                        width: '50px',
+                        height: '50px',
+                        borderRadius: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 8px 20px var(--primary-glow)',
+                        transition: 'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                    }}
+                    onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.92)'}
+                    onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
-                    <Plus size={24} />
+                    <Plus size={30} strokeWidth={3} />
                 </button>
             </div>
 
@@ -291,10 +386,10 @@ export default function WorkoutView({ user, template, onFinish }) {
                                 gap: '8px', marginBottom: '8px',
                                 fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center'
                             }}>
-                                <div>Set</div>
-                                <div>kg</div>
-                                <div>Reps</div>
-                                <div>RPE</div>
+                                <div>{t('set_label')}</div>
+                                <div>{t('kg')}</div>
+                                <div>{t('reps_label')}</div>
+                                <div>{t('rpe_label')}</div>
                                 <div>✓</div>
                             </div>
 
@@ -325,7 +420,7 @@ export default function WorkoutView({ user, template, onFinish }) {
                                         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                                     }}
                                 >
-                                    <Plus size={16} /> Add Set
+                                    <Plus size={16} /> {t('add_set')}
                                 </button>
                                 {ex.sets.length > 0 && (
                                     <button
@@ -347,13 +442,14 @@ export default function WorkoutView({ user, template, onFinish }) {
                 ))}
 
                 {activeExercises.length === 0 && (
-                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px' }}>
-                        <p>No exercises added yet.</p>
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '40px', padding: '24px' }}>
+                        <p>{t('no_exercises_added')}</p>
                         <button
                             className="btn btn-primary"
                             onClick={() => setShowAddExercise(true)}
+                            style={{ padding: '12px 24px' }}
                         >
-                            Add Your First Exercise
+                            {t('add_first_exercise')}
                         </button>
                     </div>
                 )}
@@ -364,6 +460,8 @@ export default function WorkoutView({ user, template, onFinish }) {
                 <WorkoutSession
                     initialStartTime={sessionStartTime}
                     onFinish={handleFinishWorkout}
+                    onCancel={handleCancelWorkout}
+                    exercises={activeExercises}
                 />
             </div>
 
@@ -374,6 +472,17 @@ export default function WorkoutView({ user, template, onFinish }) {
                     onSelect={handleAddExercise}
                 />
             )}
+
+            <ConfirmModal
+                isOpen={showCancelConfirm}
+                onClose={() => setShowCancelConfirm(false)}
+                onConfirm={confirmCancel}
+                title={t('cancel_workout')}
+                message={t('confirm_cancel_workout')}
+                confirmText={t('cancel_workout')}
+                cancelText={t('cancel')}
+                isDestructive={true}
+            />
 
             <AnimatePresence>
                 {showSummary && (

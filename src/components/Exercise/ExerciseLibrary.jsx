@@ -4,8 +4,10 @@ import { Search, Plus, Dumbbell, X, Camera, Pencil, Trash2 } from 'lucide-react'
 import { API_BASE_URL } from '../../config';
 import { api } from '../../services/api';
 import ExerciseModal from '../Workout/ExerciseModal';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function ExerciseLibrary() {
+    const { t } = useLanguage();
     const [exercises, setExercises] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [search, setSearch] = useState('');
@@ -117,7 +119,7 @@ export default function ExerciseLibrary() {
         >
             {/* Header */}
             <motion.div variants={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>Exercise Library</h2>
+                <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{t('exercises')}</h2>
                 <button
                     onClick={() => {
                         setNewEx({ name: '', muscle_group: 'Chest', equipment: 'Barbell', type: 'weight_reps', video_url: '', image_url: '' });
@@ -136,7 +138,7 @@ export default function ExerciseLibrary() {
                 <input
                     className="input-elegant"
                     type="text"
-                    placeholder="Search exercises..."
+                    placeholder={t('search_exercises')}
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     style={{
@@ -147,18 +149,19 @@ export default function ExerciseLibrary() {
                 />
             </motion.div>
 
+
             {/* Add/Edit Form */}
             {showAdd && (
-                <div className="glass-panel" style={{ padding: '16px', marginBottom: '24px', border: '1px solid var(--primary-glow)' }}>
+                <div className="glass-panel" style={{ padding: '20px', marginBottom: '24px', border: '1px solid var(--primary-glow)', background: 'rgba(0, 242, 254, 0.05)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ margin: 0 }}>{newEx.id ? 'Edit Exercise' : 'New Custom Exercise'}</h3>
+                        <h3 style={{ margin: 0 }}>{newEx.id ? t('edit_exercise') : t('new_exercise')}</h3>
                         <button onClick={() => setShowAdd(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={20} /></button>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <input
                             className="input-elegant"
-                            placeholder="Exercise Name"
+                            placeholder={t('exercise_name')}
                             value={newEx.name}
                             onChange={e => setNewEx({ ...newEx, name: e.target.value })}
                         />
@@ -200,7 +203,7 @@ export default function ExerciseLibrary() {
                             ) : (
                                 <label className="btn btn-secondary" style={{ flex: 1, cursor: 'pointer', padding: '12px', borderStyle: 'dashed' }}>
                                     <Camera size={20} />
-                                    <span>Upload Image</span>
+                                    <span>{t('upload_image')}</span>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -229,7 +232,7 @@ export default function ExerciseLibrary() {
                             )}
                         </div>
                         <button onClick={handleAdd} className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
-                            {newEx.id ? 'Update Exercise' : 'Save Exercise'}
+                            {newEx.id ? t('update_exercise') : t('save_exercise')}
                         </button>
                     </div>
                 </div>
@@ -245,20 +248,24 @@ export default function ExerciseLibrary() {
 
             {/* List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {filtered.map(ex => (
+                {filtered.map((ex, index) => (
                     <motion.div
                         key={ex.id}
-                        variants={item}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.03, duration: 0.3 }}
+                        className="glass-panel"
                         style={{
-                            background: 'rgba(255,255,255,0.03)',
                             padding: '16px',
-                            borderRadius: '12px',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'space-between'
+                            justifyContent: 'space-between',
+                            background: 'rgba(255,255,255,0.02)',
+                            cursor: 'pointer'
                         }}
+                        onClick={() => setSelectedExercise(ex)}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, cursor: 'pointer' }} onClick={() => setSelectedExercise(ex)}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
                             <div style={{
                                 width: '40px', height: '40px', borderRadius: '8px',
                                 background: 'rgba(0,229,255,0.1)', color: 'var(--primary)',
@@ -272,7 +279,7 @@ export default function ExerciseLibrary() {
                                 )}
                             </div>
                             <div>
-                                <h4 style={{ fontSize: '1rem', fontWeight: 600 }}>{ex.name}</h4>
+                                <h4 style={{ fontSize: '1rem', fontWeight: 600, color: '#ffffff', margin: 0 }}>{ex.name}</h4>
                                 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{ex.muscle_group} • {ex.equipment}</span>
                             </div>
                         </div>

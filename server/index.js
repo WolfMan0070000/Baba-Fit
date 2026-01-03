@@ -160,10 +160,26 @@ app.get('/api/logs', (req, res) => {
 
 // Save or Update a log
 app.post('/api/logs', (req, res) => {
-    const { date, exercise_id, set_number, weight, reps, completed, set_type, rpe, userId } = req.body;
+    let { date, exercise_id, set_number, weight, reps, completed, set_type, rpe, userId } = req.body;
 
     if (!date || !exercise_id || set_number === undefined) {
         return res.status(400).json({ error: 'Missing required fields: date, exercise_id, set_number' });
+    }
+
+    // Sanitize empty strings to null
+    const sanitizeValue = (val) => {
+        if (val === '' || val === undefined || val === null) return null;
+        const num = parseFloat(val);
+        return isNaN(num) ? null : num;
+    };
+
+    weight = sanitizeValue(weight);
+    reps = sanitizeValue(reps);
+    rpe = sanitizeValue(rpe);
+
+    // Auto-complete sets that have both weight and reps
+    if (completed === undefined || completed === null) {
+        completed = (weight !== null && reps !== null && weight > 0 && reps > 0) ? 1 : 0;
     }
 
     // Check if exists
@@ -224,24 +240,45 @@ app.get('/api/sessions', (req, res) => {
 
 // Create a new session (Finish Workout)
 app.post('/api/sessions', (req, res) => {
-    const { date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, difficulty, userId } = req.body;
+    const { date, start_time, end_time, duration_minutes, calories_burned, workout_name, difficulty, userId } = req.body;
 
     if (!date) {
         return res.status(400).json({ error: 'Missing required fields: date' });
     }
 
-    db.run(
-        `INSERT INTO workout_sessions (date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, difficulty, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, difficulty, userId || 1],
-        function (err) {
-            const sessionId = this.lastID;
-            // Link logs to this session
+    // First, calculate total volume from actual logs for this date and user
+    db.get(
+        `SELECT SUM(weight * reps) as total_volume 
+         FROM workout_logs 
+         WHERE user_id = ? AND date = ? AND session_id IS NULL AND completed = 1 
+         AND weight IS NOT NULL AND reps IS NOT NULL`,
+        [userId || 1, date],
+        (err, volumeRow) => {
+            if (err) {
+                console.error("Error calculating volume:", err);
+                return res.status(500).json({ error: err.message });
+            }
+
+            const calculatedVolume = volumeRow?.total_volume || 0;
+
+            // Insert session with calculated volume
             db.run(
-                "UPDATE workout_logs SET session_id = ? WHERE user_id = ? AND date = ? AND session_id IS NULL",
-                [sessionId, userId || 1, date],
-                (err) => {
-                    if (err) console.error("Error linking logs to session:", err.message);
-                    res.json({ message: 'Session saved', id: sessionId });
+                `INSERT INTO workout_sessions (date, start_time, end_time, duration_minutes, calories_burned, total_volume, workout_name, difficulty, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [date, start_time, end_time, duration_minutes, calories_burned, calculatedVolume, workout_name, difficulty, userId || 1],
+                function (err) {
+                    if (err) return res.status(500).json({ error: err.message });
+
+                    const sessionId = this.lastID;
+
+                    // Link logs to this session
+                    db.run(
+                        "UPDATE workout_logs SET session_id = ? WHERE user_id = ? AND date = ? AND session_id IS NULL",
+                        [sessionId, userId || 1, date],
+                        (err) => {
+                            if (err) console.error("Error linking logs to session:", err.message);
+                            res.json({ message: 'Session saved', id: sessionId, total_volume: calculatedVolume });
+                        }
+                    );
                 }
             );
         }
@@ -276,7 +313,7 @@ app.get('/api/sessions/:id', (req, res) => {
                 COALESCE(o.video_url, e.video_url) as video_url,
                 COALESCE(o.image_url, e.image_url) as image_url
             FROM workout_logs l
-            LEFT JOIN exercises e ON l.exercise_id = e.id
+            LEFT JOIN exercises e ON (CAST(l.exercise_id AS TEXT) = CAST(e.id AS TEXT))
             LEFT JOIN exercise_overrides o ON e.id = o.exercise_id AND o.user_id = l.user_id
             WHERE (l.session_id = ? OR (l.date = ? AND l.session_id IS NULL)) AND l.user_id = ?
             ORDER BY l.id ASC

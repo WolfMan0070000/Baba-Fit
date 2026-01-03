@@ -1,10 +1,12 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function OneRepMaxChart({ data, title, color = "var(--primary)" }) {
+    const { t } = useLanguage();
     if (!data || data.length === 0) {
         return (
             <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No 1RM data available yet.
+                {t('no_1rm_data')}
             </div>
         );
     }

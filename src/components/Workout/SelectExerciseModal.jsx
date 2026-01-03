@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Search, X, Plus } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 import { API_BASE_URL } from '../../config';
 
 export default function SelectExerciseModal({ onClose, onSelect }) {
+    const { t } = useLanguage();
     const [exercises, setExercises] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [search, setSearch] = useState('');
@@ -28,7 +30,7 @@ export default function SelectExerciseModal({ onClose, onSelect }) {
             <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', height: '80vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-app)', border: '1px solid var(--border-light)' }}>
                 {/* Header */}
                 <div style={{ padding: '16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ margin: 0 }}>Add Exercise</h3>
+                    <h3 style={{ margin: 0 }}>{t('add_exercise')}</h3>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
                 </div>
 
@@ -37,7 +39,7 @@ export default function SelectExerciseModal({ onClose, onSelect }) {
                     <div style={{ position: 'relative' }}>
                         <Search size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                         <input
-                            placeholder="Search..."
+                            placeholder={t('search_exercises')}
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white' }}

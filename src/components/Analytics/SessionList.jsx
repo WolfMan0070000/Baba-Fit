@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Clock, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Clock, TrendingUp, TrendingDown, Minus, X } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
 import { program } from '../../data/program';
 
 export default function SessionList() {
+    const { t } = useLanguage();
     const [sessions, setSessions] = useState([]);
     const [selectedSession, setSelectedSession] = useState(null);
     const [details, setDetails] = useState(null);
@@ -26,7 +28,7 @@ export default function SessionList() {
             api.getExercises()
         ]).then(([sessionsData, exercisesData]) => {
             setSessions(sessionsData);
-            setExercises(exercisesData);
+            setExercises(exercisesData || []);
         });
     }, []);
 
@@ -37,14 +39,9 @@ export default function SessionList() {
     };
 
     const getExerciseName = (id) => {
-        // 1. Try API list
-        const ex = exercises.find(e => e.id === id || e.id === String(id) || String(e.id) === String(id));
+        const ex = (exercises || []).find(e => String(e.id) === String(id));
         if (ex) return ex.name;
-
-        // 2. Try static program fallback
         if (programExerciseMap[id]) return programExerciseMap[id];
-
-        // 3. Unknown
         return `Unknown Exercise (ID: ${id})`;
     };
 
@@ -55,24 +52,23 @@ export default function SessionList() {
 
     // Group logs by exercise for display
     const groupedLogs = details ? details.logs.reduce((acc, log) => {
-        // Use log.exercise_name if available, otherwise lookup from exercises list or fallback
         const name = log.exercise_name || getExerciseName(log.exercise_id);
         if (!acc[name]) acc[name] = [];
         acc[name].push(log);
         return acc;
     }, {}) : {};
 
-    if (!sessions.length) {
+    if (!sessions || sessions.length === 0) {
         return (
             <div className="glass-panel" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                No completed sessions yet.
+                {t('no_sessions')}
             </div>
         );
     }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ marginLeft: '8px', fontSize: '1.2rem' }}>Recent Workouts</h3>
+            <h3 style={{ marginLeft: '8px', fontSize: '1.2rem' }}>{t('recent_workouts')}</h3>
             {(Array.isArray(sessions) ? [...sessions] : []).sort((a, b) => new Date(b.date) - new Date(a.date)).map((session, index, arr) => {
                 const prevSession = arr[index + 1];
                 const currentVol = session.total_volume || 0;
@@ -90,10 +86,10 @@ export default function SessionList() {
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{session.workout_name || 'Workout'}</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{session.workout_name || t('workout')}</div>
                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <Clock size={14} />
-                                    {session.date} • {session.duration_minutes} min
+                                    {session.date} • {session.duration_minutes} {t('min_label')}
                                 </div>
                             </div>
 
@@ -114,25 +110,25 @@ export default function SessionList() {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Volume</span>
-                                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{currentVol.toLocaleString()} kg</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('total_volume_label')}</span>
+                                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{currentVol.toLocaleString()} {t('kg')}</span>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Calories</span>
-                                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{session.calories_burned || 0} kcal</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{t('calories')}</span>
+                                <span style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-main)' }}>{session.calories_burned || 0} {t('kcal_label')}</span>
                             </div>
                         </div>
                     </div>
-                )
+                );
             })}
 
             {/* Detail Modal */}
             {selectedSession && details && (
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1100, padding: '20px', overflowY: 'auto' }}>
                     <div style={{ maxWidth: '600px', margin: '0 auto', background: 'var(--bg-app)', borderRadius: '16px', minHeight: '80vh', padding: '20px', border: '1px solid var(--border-light)' }}>
-                        <button onClick={closeModal} style={{ float: 'right', background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
-                        <h2 className="text-gradient" style={{ marginBottom: '4px' }}>{details.workout_name || 'Workout Details'}</h2>
-                        <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>{details.date} • {details.duration_minutes} mins • {details.calories_burned} cals</p>
+                        <button onClick={closeModal} style={{ float: 'right', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
+                        <h2 className="text-gradient" style={{ marginBottom: '4px' }}>{details.workout_name || t('workout_details')}</h2>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>{details.date} • {details.duration_minutes} {t('mins_label')} • {details.calories_burned} {t('cals_label')}</p>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {Object.entries(groupedLogs).map(([exerciseName, logs]) => (
@@ -141,10 +137,10 @@ export default function SessionList() {
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                                         <thead>
                                             <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>
-                                                <th style={{ textAlign: 'left', paddingBottom: '8px' }}>Set</th>
-                                                <th style={{ textAlign: 'center', paddingBottom: '8px' }}>Kg</th>
-                                                <th style={{ textAlign: 'center', paddingBottom: '8px' }}>Reps</th>
-                                                <th style={{ textAlign: 'right', paddingBottom: '8px' }}>RPE</th>
+                                                <th style={{ textAlign: 'start', paddingBottom: '8px' }}>{t('set_label')}</th>
+                                                <th style={{ textAlign: 'center', paddingBottom: '8px' }}>{t('kg')}</th>
+                                                <th style={{ textAlign: 'center', paddingBottom: '8px' }}>{t('reps_label')}</th>
+                                                <th style={{ textAlign: 'end', paddingBottom: '8px' }}>{t('rpe_label')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -152,14 +148,14 @@ export default function SessionList() {
                                                 <tr key={log.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                                     <td style={{ padding: '8px 0', verticalAlign: 'middle' }}>
                                                         <span style={{
-                                                            display: 'inline-block', width: '20px', height: '20px',
-                                                            textAlign: 'center', lineHeight: '20px', borderRadius: '50%',
+                                                            display: 'inline-block', width: '24px', height: '24px',
+                                                            textAlign: 'center', lineHeight: '24px', borderRadius: '50%',
                                                             background: 'rgba(255,255,255,0.1)', fontSize: '0.75rem'
                                                         }}>{log.set_type === 'warmup' ? 'W' : (log.set_number || idx + 1)}</span>
                                                     </td>
                                                     <td style={{ textAlign: 'center', color: 'white' }}>{log.weight || '-'}</td>
                                                     <td style={{ textAlign: 'center', color: 'white' }}>{log.reps || '-'}</td>
-                                                    <td style={{ textAlign: 'right', color: 'var(--text-muted)' }}>{log.rpe || '-'}</td>
+                                                    <td style={{ textAlign: 'end', color: 'var(--text-muted)' }}>{log.rpe || '-'}</td>
                                                 </tr>
                                             ))}
                                         </tbody>

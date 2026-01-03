@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Scale, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
 import ProgressionChart from './ProgressionChart';
 
 export default function BodyMetrics() {
+    const { t } = useLanguage();
     const [expanded, setExpanded] = useState(false);
     const [metrics, setMetrics] = useState([]);
     const [todayForm, setTodayForm] = useState({
@@ -39,76 +41,77 @@ export default function BodyMetrics() {
     })).filter(d => d.value);
 
     return (
-        <div className="glass-panel" style={{ padding: '16px' }}>
+        <div className="glass-panel" style={{ padding: '20px' }}>
             <div
                 onClick={() => setExpanded(!expanded)}
                 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '8px' }}>
-                        <Scale size={20} color="var(--primary)" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px', borderRadius: '12px' }}>
+                        <Scale size={24} color="var(--primary)" />
                     </div>
                     <div>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Body Metrics</h3>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                            Weight: {metrics[0]?.weight || '--'} kg
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{t('body_metrics')}</h3>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                            {t('weight_label')}: {metrics[0]?.weight || '--'} {t('kg')}
                         </span>
                     </div>
                 </div>
-                {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                {expanded ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
             </div>
 
             {expanded && (
-                <div style={{ marginTop: '16px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ marginTop: '24px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                         <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Weight (kg)</label>
+                            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{t('weight_label')} ({t('kg')})</label>
                             <input
                                 type="number"
                                 value={todayForm.weight}
                                 onChange={e => setTodayForm({ ...todayForm, weight: e.target.value })}
-                                style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', borderRadius: '6px', color: 'white' }}
+                                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-light)', borderRadius: '10px', color: 'white' }}
+                                placeholder="e.g. 75.5"
                             />
                         </div>
                         <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Body Fat (%)</label>
+                            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{t('body_fat')}</label>
                             <input
                                 type="number"
                                 value={todayForm.body_fat}
                                 onChange={e => setTodayForm({ ...todayForm, body_fat: e.target.value })}
-                                style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', borderRadius: '6px', color: 'white' }}
+                                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-light)', borderRadius: '10px', color: 'white' }}
+                                placeholder="e.g. 15"
                             />
                         </div>
                         <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>M: Chest (cm)</label>
+                            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{t('chest_cm')}</label>
                             <input
                                 type="number"
                                 value={todayForm.chest}
                                 onChange={e => setTodayForm({ ...todayForm, chest: e.target.value })}
-                                style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', borderRadius: '6px', color: 'white' }}
+                                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-light)', borderRadius: '10px', color: 'white' }}
                             />
                         </div>
                         <div>
-                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>M: Waist (cm)</label>
+                            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>{t('waist_cm')}</label>
                             <input
                                 type="number"
                                 value={todayForm.waist}
                                 onChange={e => setTodayForm({ ...todayForm, waist: e.target.value })}
-                                style={{ width: '100%', padding: '8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-light)', borderRadius: '6px', color: 'white' }}
+                                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-light)', borderRadius: '10px', color: 'white' }}
                             />
                         </div>
                     </div>
-                    <button onClick={handleSave} className="btn-primary" style={{ wudth: '100%', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-                        <Save size={16} /> Save Today's Metrics
+                    <button onClick={handleSave} className="btn btn-primary" style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: '8px', padding: '14px' }}>
+                        <Save size={18} /> {t('save_today_metrics')}
                     </button>
 
-                    <div style={{ marginTop: '20px', height: '150px' }}>
-                        {/* Simple Chart Visualization Reuse - assumes ProgressionChart handles data */}
+                    <div style={{ marginTop: '32px' }}>
                         {weightData.length > 1 && (
                             <ProgressionChart
-                                title="Weight Trend"
+                                title={t('weight_trend')}
                                 data={weightData}
-                                color="#ffb300"
+                                color="var(--accent)"
                             />
                         )}
                     </div>

@@ -1,7 +1,10 @@
+import { useLanguage } from '../../context/LanguageContext';
+
 export default function ProgressionChart({ data, title, color = '#00e5ff' }) {
+    const { t } = useLanguage();
     if (!data || data.length < 2) return (
         <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Not enough data for {title}</span>
+            <span style={{ color: 'var(--text-muted)' }}>{t('not_enough_data')} {title}</span>
         </div>
     );
 

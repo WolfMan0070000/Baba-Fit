@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Plus, Dumbbell, X, Camera, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, Dumbbell, X, Camera, Pencil, Trash2, Info } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { api } from '../../services/api';
 import ExerciseModal from '../Workout/ExerciseModal';

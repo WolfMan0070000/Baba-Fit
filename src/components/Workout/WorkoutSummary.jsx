@@ -54,7 +54,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                     width: '100%',
                     maxWidth: '500px',
                     margin: '0 auto',
-                    background: 'var(--bg-card)',
+                    backgroundColor: 'var(--bg-card)',
                     borderRadius: '24px',
                     padding: '32px 20px',
                     position: 'relative',

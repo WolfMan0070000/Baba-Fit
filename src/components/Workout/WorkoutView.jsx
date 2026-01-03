@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Plus, MoreVertical, Trash2, Info, Dumbbell, Minus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +6,7 @@ import { api } from '../../services/api';
 import WorkoutSession from './WorkoutSession';
 import WorkoutSummary from './WorkoutSummary';
 import SelectExerciseModal from './SelectExerciseModal';
+import ExerciseModal from './ExerciseModal';
 import SetTracker from './SetTracker';
 import ConfirmModal from '../Common/ConfirmModal';
 
@@ -24,6 +24,7 @@ export default function WorkoutView({ user, template, onFinish }) {
     const [summaryData, setSummaryData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+    const [selectedExerciseForModal, setSelectedExerciseForModal] = useState(null);
 
     // Initialize Session
     useEffect(() => {
@@ -90,8 +91,7 @@ export default function WorkoutView({ user, template, onFinish }) {
 
     const handleAddExercise = (exercise) => {
         const newExercise = {
-            id: exercise.id,
-            name: exercise.name,
+            ...exercise,
             target_sets: 3,
             target_reps: '10', // Default
             sets: [
@@ -369,7 +369,25 @@ export default function WorkoutView({ user, template, onFinish }) {
                                 }}>
                                     <Dumbbell size={20} />
                                 </div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0 }}>{ex.name}</h3>
+                                <h3
+                                    onClick={() => setSelectedExerciseForModal(ex)}
+                                    style={{
+                                        fontSize: '1.1rem',
+                                        fontWeight: 600,
+                                        margin: 0,
+                                        cursor: 'pointer',
+                                        textDecoration: 'underline',
+                                        textDecorationStyle: 'dashed',
+                                        textDecorationColor: 'rgba(255,255,255,0.3)',
+                                        textUnderlineOffset: '4px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}
+                                >
+                                    {ex.name}
+                                    <Info size={14} style={{ opacity: 0.6 }} />
+                                </h3>
                             </div>
                             <button
                                 onClick={() => handleRemoveExercise(exIndex)}
@@ -493,6 +511,13 @@ export default function WorkoutView({ user, template, onFinish }) {
                     />
                 )}
             </AnimatePresence>
+
+            {selectedExerciseForModal && (
+                <ExerciseModal
+                    exercise={selectedExerciseForModal}
+                    onClose={() => setSelectedExerciseForModal(null)}
+                />
+            )}
         </div>
     );
 }

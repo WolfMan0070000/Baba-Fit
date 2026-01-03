@@ -79,7 +79,7 @@ export default function ExerciseModal({ exercise, onClose }) {
 
                 {/* Header */}
                 <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)' }}>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{isRTL ? exercise.name_fa : exercise.name_en}</h3>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{isRTL ? (exercise.name_fa || exercise.name) : (exercise.name_en || exercise.name)}</h3>
                     <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#fff', cursor: 'pointer', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <X size={20} />
                     </button>
@@ -205,7 +205,7 @@ export default function ExerciseModal({ exercise, onClose }) {
                     <div style={{ marginBottom: '20px' }}>
                         <h4 style={{ color: 'var(--primary)', marginBottom: '8px', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px' }}>{t('notes')}</h4>
                         <p style={{ fontSize: '0.95rem', lineHeight: '1.6', color: 'rgba(255,255,255,0.8)' }}>
-                            {isRTL ? exercise.note_fa : exercise.note_en || "Follow proper form and control the eccentric phase of the movement for maximum efficiency."}
+                            {isRTL ? (exercise.note_fa || exercise.notes || exercise.note) : (exercise.note_en || exercise.notes || exercise.note || "Follow proper form and control the eccentric phase of the movement for maximum efficiency.")}
                         </p>
                     </div>
 
@@ -213,9 +213,9 @@ export default function ExerciseModal({ exercise, onClose }) {
                         <h4 style={{ color: 'var(--text-muted)', marginBottom: '12px', fontSize: '0.8rem', fontWeight: 700 }}>WORKOUT GOALS</h4>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             {[
-                                { label: 'Sets', val: exercise.sets },
-                                { label: 'Reps', val: exercise.reps },
-                                { label: 'RPE', val: exercise.rpe }
+                                { label: 'Sets', val: Array.isArray(exercise.sets) ? exercise.sets.length : (exercise.sets || exercise.target_sets || '-') },
+                                { label: 'Reps', val: exercise.reps || exercise.target_reps || '-' },
+                                { label: 'RPE', val: exercise.rpe || exercise.target_rpe || '-' }
                             ].map(item => (
                                 <div key={item.label} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                                     <span style={{ display: 'block', fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '4px', textTransform: 'uppercase' }}>{item.label}</span>

@@ -390,10 +390,11 @@ app.get('/api/history/volume/:exerciseId', (req, res) => {
 
 // --- Exercises ---
 
-const { userId } = req.query;
-// Show global exercises + user's custom ones, merged with personal overrides
-// Use explicit casting for IDs to ensure compatibility across different DB drivers/types
-const query = `
+app.get('/api/exercises', (req, res) => {
+    const { userId } = req.query;
+    // Show global exercises + user's custom ones, merged with personal overrides
+    // Use explicit casting for IDs to ensure compatibility across different DB drivers/types
+    const query = `
         SELECT 
             e.*, 
             COALESCE(o.video_url, e.video_url) as video_url, 
@@ -403,13 +404,13 @@ const query = `
         WHERE e.user_id IS NULL OR e.user_id = ?
         ORDER BY e.name ASC
     `;
-db.all(query, [userId || 1, userId || 1], (err, rows) => {
-    if (err) {
-        console.error('Error fetching exercises:', err);
-        return res.status(500).json({ error: err.message });
-    }
-    res.json({ data: rows });
-});
+    db.all(query, [userId || 1, userId || 1], (err, rows) => {
+        if (err) {
+            console.error('Error fetching exercises:', err);
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ data: rows });
+    });
 });
 
 app.post('/api/exercises', (req, res) => {

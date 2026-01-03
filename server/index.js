@@ -314,7 +314,7 @@ app.get('/api/sessions/:id', (req, res) => {
                 COALESCE(o.image_url, e.image_url) as image_url
             FROM workout_logs l
             LEFT JOIN exercises e ON (CAST(l.exercise_id AS TEXT) = CAST(e.id AS TEXT))
-            LEFT JOIN exercise_overrides o ON e.id = o.exercise_id AND o.user_id = l.user_id
+            LEFT JOIN exercise_overrides o ON CAST(e.id AS TEXT) = CAST(o.exercise_id AS TEXT) AND o.user_id = l.user_id
             WHERE (l.session_id = ? OR (l.date = ? AND l.session_id IS NULL)) AND l.user_id = ?
             ORDER BY l.id ASC
         `, [id, session.date, session.user_id], (err, logs) => {
@@ -390,23 +390,26 @@ app.get('/api/history/volume/:exerciseId', (req, res) => {
 
 // --- Exercises ---
 
-app.get('/api/exercises', (req, res) => {
-    const { userId } = req.query;
-    // Show global exercises + user's custom ones, merged with personal overrides
-    const query = `
+const { userId } = req.query;
+// Show global exercises + user's custom ones, merged with personal overrides
+// Use explicit casting for IDs to ensure compatibility across different DB drivers/types
+const query = `
         SELECT 
             e.*, 
             COALESCE(o.video_url, e.video_url) as video_url, 
             COALESCE(o.image_url, e.image_url) as image_url
         FROM exercises e
-        LEFT JOIN exercise_overrides o ON e.id = o.exercise_id AND o.user_id = ?
+        LEFT JOIN exercise_overrides o ON CAST(e.id AS TEXT) = CAST(o.exercise_id AS TEXT) AND o.user_id = ?
         WHERE e.user_id IS NULL OR e.user_id = ?
         ORDER BY e.name ASC
     `;
-    db.all(query, [userId || 1, userId || 1], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ data: rows });
-    });
+db.all(query, [userId || 1, userId || 1], (err, rows) => {
+    if (err) {
+        console.error('Error fetching exercises:', err);
+        return res.status(500).json({ error: err.message });
+    }
+    res.json({ data: rows });
+});
 });
 
 app.post('/api/exercises', (req, res) => {

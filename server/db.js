@@ -265,6 +265,71 @@ function initDb() {
         image_url ${textType},
         PRIMARY KEY (user_id, exercise_id)
     )`);
+
+    // ===== MIGRATIONS: Add missing columns to existing tables =====
+    // These will fail silently if the column already exists (which is fine)
+
+    const runMigration = (sql, description) => {
+        db.run(sql, [], (err) => {
+            if (err) {
+                // Ignore "already exists" errors - that's expected for migrations
+                if (!err.message.includes('already exists') &&
+                    !err.message.includes('duplicate column')) {
+                    console.log(`Migration skipped (${description}):`, err.message);
+                }
+            } else {
+                console.log(`Migration applied: ${description}`);
+            }
+        });
+    };
+
+    // Add user_id to exercises table
+    runMigration(
+        `ALTER TABLE exercises ADD COLUMN user_id INTEGER`,
+        'exercises.user_id'
+    );
+
+    // Add is_custom to exercises table
+    runMigration(
+        `ALTER TABLE exercises ADD COLUMN is_custom ${boolType} DEFAULT ${falseDefault}`,
+        'exercises.is_custom'
+    );
+
+    // Add difficulty to workout_sessions table
+    runMigration(
+        `ALTER TABLE workout_sessions ADD COLUMN difficulty ${textType}`,
+        'workout_sessions.difficulty'
+    );
+
+    // Add session_id to workout_logs table (in case it's missing)
+    runMigration(
+        `ALTER TABLE workout_logs ADD COLUMN session_id INTEGER`,
+        'workout_logs.session_id'
+    );
+
+    // Add user_id to workout_logs table (in case it's missing)
+    runMigration(
+        `ALTER TABLE workout_logs ADD COLUMN user_id INTEGER`,
+        'workout_logs.user_id'
+    );
+
+    // Add user_id to workout_sessions table (in case it's missing)
+    runMigration(
+        `ALTER TABLE workout_sessions ADD COLUMN user_id INTEGER`,
+        'workout_sessions.user_id'
+    );
+
+    // Add total_volume to workout_sessions table (in case it's missing)
+    runMigration(
+        `ALTER TABLE workout_sessions ADD COLUMN total_volume REAL`,
+        'workout_sessions.total_volume'
+    );
+
+    // Add workout_name to workout_sessions table (in case it's missing)
+    runMigration(
+        `ALTER TABLE workout_sessions ADD COLUMN workout_name ${textType}`,
+        'workout_sessions.workout_name'
+    );
 }
 
 function seedExercises() {

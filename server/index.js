@@ -314,7 +314,7 @@ app.get('/api/sessions/:id', (req, res) => {
                 COALESCE(o.image_url, e.image_url) as image_url
             FROM workout_logs l
             LEFT JOIN exercises e ON (CAST(l.exercise_id AS TEXT) = CAST(e.id AS TEXT))
-            LEFT JOIN exercise_overrides o ON CAST(e.id AS TEXT) = CAST(o.exercise_id AS TEXT) AND o.user_id = l.user_id
+            LEFT JOIN exercise_overrides o ON e.id = o.exercise_id AND o.user_id = l.user_id
             WHERE (l.session_id = ? OR (l.date = ? AND l.session_id IS NULL)) AND l.user_id = ?
             ORDER BY l.id ASC
         `, [id, session.date, session.user_id], (err, logs) => {
@@ -393,20 +393,20 @@ app.get('/api/history/volume/:exerciseId', (req, res) => {
 app.get('/api/exercises', (req, res) => {
     const { userId } = req.query;
     // Show global exercises + user's custom ones, merged with personal overrides
-    // Use explicit casting for IDs to ensure compatibility across different DB drivers/types
+    // Note: For PostgreSQL, explicit CAST is used to handle type differences
     const query = `
         SELECT 
             e.*, 
             COALESCE(o.video_url, e.video_url) as video_url, 
             COALESCE(o.image_url, e.image_url) as image_url
         FROM exercises e
-        LEFT JOIN exercise_overrides o ON CAST(e.id AS TEXT) = CAST(o.exercise_id AS TEXT) AND o.user_id = ?
+        LEFT JOIN exercise_overrides o ON CAST(e.id AS INTEGER) = o.exercise_id AND o.user_id = ?
         WHERE e.user_id IS NULL OR e.user_id = ?
         ORDER BY e.name ASC
     `;
     db.all(query, [userId || 1, userId || 1], (err, rows) => {
         if (err) {
-            console.error('Error fetching exercises:', err);
+            console.error('Error fetching exercises:', err.message);
             return res.status(500).json({ error: err.message });
         }
         res.json({ data: rows });
@@ -415,11 +415,23 @@ app.get('/api/exercises', (req, res) => {
 
 app.post('/api/exercises', (req, res) => {
     const { name, muscle_group, equipment, type, video_url, image_url, userId } = req.body;
-    const stmt = db.prepare("INSERT INTO exercises (name, muscle_group, equipment, type, video_url, image_url, is_custom, user_id) VALUES (?, ?, ?, ?, ?, ?, 1, ?)");
-    stmt.run([name, muscle_group, equipment, type || 'weight_reps', video_url, image_url, userId || 1], function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID, message: 'Exercise created' });
-    });
+
+    // Validate required fields
+    if (!name) {
+        return res.status(400).json({ error: 'Exercise name is required' });
+    }
+
+    db.run(
+        "INSERT INTO exercises (name, muscle_group, equipment, type, video_url, image_url, is_custom, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        [name, muscle_group || null, equipment || null, type || 'weight_reps', video_url || null, image_url || null, true, userId || 1],
+        function (err) {
+            if (err) {
+                console.error('Error creating exercise:', err.message);
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ id: this.lastID, message: 'Exercise created' });
+        }
+    );
 });
 
 app.put('/api/exercises/:id', (req, res) => {

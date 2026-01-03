@@ -26,10 +26,18 @@ const convertSql = (sql) => {
     newSql = newSql.replace(/completed\s*=\s*0/gi, 'completed = FALSE');
     newSql = newSql.replace(/is_guest\s*=\s*1/gi, 'is_guest = TRUE');
     newSql = newSql.replace(/is_guest\s*=\s*0/gi, 'is_guest = FALSE');
-    newSql = newSql.replace(/is_custom\s*=\s*1/gi, 'is_custom = TRUE'); // Add is_custom
+    newSql = newSql.replace(/is_custom\s*=\s*1/gi, 'is_custom = TRUE');
 
-    // Handle JOINS where one side is text and other is integer
+    // Handle JOINS where one side is text and other is integer (both directions)
     newSql = newSql.replace(/exercise_id\s*=\s*e\.id/gi, 'exercise_id::text = e.id::text');
+    newSql = newSql.replace(/e\.id\s*=\s*o\.exercise_id/gi, 'e.id::text = o.exercise_id::text');
+
+    // Handle CAST syntax for PostgreSQL (convert CAST(e.id AS INTEGER) to just e.id for PG since SERIAL is already int)
+    newSql = newSql.replace(/CAST\(e\.id AS INTEGER\)\s*=\s*o\.exercise_id/gi, 'e.id = o.exercise_id');
+
+    // Handle l.exercise_id join pattern for logs
+    newSql = newSql.replace(/l\.exercise_id\s*=\s*e\.id/gi, 'l.exercise_id::text = e.id::text');
+    newSql = newSql.replace(/te\.exercise_id\s*=\s*e\.id/gi, 'te.exercise_id::text = e.id::text');
 
     // Handle RETURNING ID for Inserts
     // Check if it's an INSERT and doesn't already have RETURNING
@@ -46,9 +54,17 @@ const sanitizeParams = (params) => {
     if (!isPostgres) return params;
     return params.map(p => {
         if (p === undefined) return null; // Important: undefined -> null for DB
+        // Handle JavaScript booleans
+        if (typeof p === 'boolean') return p;
+        // Handle string booleans
         if (typeof p === 'string') {
             if (p.toLowerCase() === 'true') return true;
             if (p.toLowerCase() === 'false') return false;
+        }
+        // Handle numeric booleans (0/1) - convert to proper boolean for Postgres
+        if (typeof p === 'number' && (p === 0 || p === 1)) {
+            // Only convert if it seems like a boolean context - let the caller decide
+            // by passing actual boolean values
         }
         return p;
     });

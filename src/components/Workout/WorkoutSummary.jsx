@@ -163,7 +163,7 @@ export default function WorkoutSummary({ isOpen, onClose, data }) {
                                     )}
 
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-                                        <div style={{ fontWeight: 700, color: '#fff' }}>{ex.name}</div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{ex.name}</div>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 600 }}>
                                             {ex.avgWeight} {t('kg')} {t('avg_label')}
                                         </div>

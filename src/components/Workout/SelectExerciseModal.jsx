@@ -30,14 +30,14 @@ export default function SelectExerciseModal({ onClose, onSelect }) {
             <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', height: '80vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-app)', border: '1px solid var(--border-light)' }}>
                 {/* Header */}
                 <div style={{ padding: '16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3 style={{ margin: 0 }}>{t('add_exercise')}</h3>
+                    <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 700 }}>{t('add_exercise')}</h3>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
                 </div>
 
                 {/* Search */}
                 <div style={{ padding: '16px', borderBottom: '1px solid var(--border-light)' }}>
                     <div style={{ position: 'relative' }}>
-                        <Search size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+                        <Search size={20} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
                         <input
                             placeholder={t('search_exercises')}
                             value={search}
@@ -67,7 +67,7 @@ export default function SelectExerciseModal({ onClose, onSelect }) {
                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{ex.muscle_group}</div>
                                 </div>
                             </div>
-                            <Plus size={18} color="var(--primary)" />
+                            <Plus size={20} color="var(--primary)" />
                         </div>
                     ))}
                 </div>

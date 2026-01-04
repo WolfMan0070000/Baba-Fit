@@ -61,7 +61,7 @@ export default function Dashboard({ onViewChange, user, hasActiveSession }) {
             <motion.div variants={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', padding: '0 8px' }}>
                 <div>
                     <h2 style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>{t('welcome_back')}</h2>
-                    <h1 className="text-gradient" style={{ fontSize: '2.5rem', fontWeight: 800 }}>{profile?.name || 'Athlete'}</h1>
+                    <h1 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{profile?.name || 'Athlete'}</h1>
                 </div>
                 <div
                     onClick={() => onViewChange('profile')}

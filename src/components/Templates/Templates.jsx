@@ -292,7 +292,7 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
             style={{ paddingBottom: '120px' }}
         >
             <motion.div variants={itemVariants} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-                <h2 className="text-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>{t('workouts')}</h2>
+                <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{t('workouts')}</h2>
                 <div style={{ display: 'flex', gap: '12px' }}>
                     <button
                         onClick={() => setShowCreateFolder(true)}
@@ -316,7 +316,7 @@ export default function Templates({ onStartWorkout, user, hasActiveSession }) {
                         className="btn btn-primary"
                         style={{ borderRadius: '50%', width: '48px', height: '48px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
-                        <Plus size={28} />
+                        <Plus size={24} />
                     </button>
                 </div>
             </motion.div>

@@ -68,7 +68,7 @@ export default function SessionList() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ marginLeft: '8px', fontSize: '1.2rem' }}>{t('recent_workouts')}</h3>
+            <h3 style={{ marginLeft: '8px', fontSize: '1.4rem', fontWeight: 700 }}>{t('recent_workouts')}</h3>
             {(Array.isArray(sessions) ? [...sessions] : []).sort((a, b) => new Date(b.date) - new Date(a.date)).map((session, index, arr) => {
                 const prevSession = arr[index + 1];
                 const currentVol = session.total_volume || 0;
@@ -86,7 +86,7 @@ export default function SessionList() {
                     >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                             <div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{session.workout_name || t('workout')}</div>
+                                <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff', marginBottom: '4px' }}>{session.workout_name || t('workout')}</div>
                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                     <Clock size={14} />
                                     {session.date} • {session.duration_minutes} {t('min_label')}
@@ -127,13 +127,13 @@ export default function SessionList() {
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 1100, padding: '20px', overflowY: 'auto' }}>
                     <div style={{ maxWidth: '600px', margin: '0 auto', background: 'var(--bg-app)', borderRadius: '16px', minHeight: '80vh', padding: '20px', border: '1px solid var(--border-light)' }}>
                         <button onClick={closeModal} style={{ float: 'right', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={24} /></button>
-                        <h2 className="text-gradient" style={{ marginBottom: '4px' }}>{details.workout_name || t('workout_details')}</h2>
+                        <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '4px' }}>{details.workout_name || t('workout_details')}</h2>
                         <p style={{ color: 'var(--text-muted)', marginBottom: '20px' }}>{details.date} • {details.duration_minutes} {t('mins_label')} • {details.calories_burned} {t('cals_label')}</p>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {Object.entries(groupedLogs).map(([exerciseName, logs]) => (
                                 <div key={exerciseName} className="glass-panel" style={{ padding: '16px' }}>
-                                    <h4 style={{ fontSize: '1.1rem', marginBottom: '12px', color: 'var(--primary)' }}>{exerciseName}</h4>
+                                    <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '12px', color: 'var(--primary)' }}>{exerciseName}</h4>
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                                         <thead>
                                             <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>

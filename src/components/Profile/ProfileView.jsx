@@ -53,7 +53,7 @@ export default function ProfileView({ user, onLogout }) {
             className="container"
             style={{ paddingBottom: '120px', display: 'flex', flexDirection: 'column', gap: '24px', direction: isRTL ? 'rtl' : 'ltr' }}
         >
-            <motion.h2 variants={item} className="text-gradient" style={{ fontSize: '2rem', fontWeight: 800 }}>{t('my_profile')}</motion.h2>
+            <motion.h2 variants={item} className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>{t('my_profile')}</motion.h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
                 {/* Personal Details */}

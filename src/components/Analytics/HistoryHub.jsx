@@ -91,7 +91,7 @@ export default function HistoryHub({ user }) {
             style={{ display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '20px' }}
         >
             <motion.div variants={item} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2 className="text-gradient" style={{ fontSize: '1.5rem', marginLeft: '8px' }}>{t('history_hub')}</h2>
+                <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800, marginLeft: '8px' }}>{t('history_hub')}</h2>
                 <button
                     onClick={handleExport}
                     style={{

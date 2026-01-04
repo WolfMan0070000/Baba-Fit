@@ -119,8 +119,8 @@ export default function WeeklyCoach({ user }) {
             {/* Smart Coach / Recommendations */}
             <div className="glass-panel" style={{ padding: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                    <Target size={20} color="var(--primary)" />
-                    <h3 className="text-gradient" style={{ fontSize: '1.2rem', margin: 0 }}>{t('smart_goals')}</h3>
+                    <Target size={24} color="var(--primary)" />
+                    <h3 className="text-gradient" style={{ fontSize: '1.4rem', margin: 0 }}>{t('smart_goals')}</h3>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

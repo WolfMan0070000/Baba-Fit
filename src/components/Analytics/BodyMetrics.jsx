@@ -51,7 +51,7 @@ export default function BodyMetrics() {
                         <Scale size={24} color="var(--primary)" />
                     </div>
                     <div>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{t('body_metrics')}</h3>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{t('body_metrics')}</h3>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                             {t('weight_label')}: {metrics[0]?.weight || '--'} {t('kg')}
                         </span>

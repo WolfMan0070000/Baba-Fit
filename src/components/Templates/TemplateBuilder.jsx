@@ -45,7 +45,7 @@ export default function TemplateBuilder({ template, onBack, onSave }) {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <button onClick={onBack} className="btn-icon">
-                        {isRTL ? <ChevronRight size={28} /> : <ChevronLeft size={28} />}
+                        {isRTL ? <ChevronRight size={24} /> : <ChevronLeft size={24} />}
                     </button>
                     <h2 className="text-gradient" style={{ fontSize: '1.8rem', fontWeight: 800 }}>
                         {template ? t('blueprint') : t('new_routine')}
@@ -89,7 +89,7 @@ export default function TemplateBuilder({ template, onBack, onSave }) {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                 <GripVertical size={20} color="var(--text-muted)" style={{ cursor: 'grab' }} />
-                                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--primary)' }}>{ex.exercise_name || ex.name}</h3>
+                                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)' }}>{ex.exercise_name || ex.name}</h3>
                             </div>
                             <button onClick={() => handleRemoveExercise(idx)} className="btn-icon" style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
                                 <Trash2 size={20} color="#ef4444" />

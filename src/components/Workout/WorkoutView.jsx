@@ -291,8 +291,8 @@ export default function WorkoutView({ user, template, onFinish }) {
                 <div style={{ flex: 1 }}>
                     <h2 className="text-gradient" style={{
                         margin: 0,
-                        fontSize: '1.6rem',
-                        fontWeight: 900,
+                        fontSize: '1.8rem',
+                        fontWeight: 800,
                         letterSpacing: '-0.03em',
                         lineHeight: 1.1
                     }}>
@@ -341,7 +341,7 @@ export default function WorkoutView({ user, template, onFinish }) {
                     onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.92)'}
                     onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
                 >
-                    <Plus size={30} strokeWidth={3} />
+                    <Plus size={24} strokeWidth={3} />
                 </button>
             </div>
 
@@ -372,7 +372,7 @@ export default function WorkoutView({ user, template, onFinish }) {
                                 <h3
                                     onClick={() => setSelectedExerciseForModal(ex)}
                                     style={{
-                                        fontSize: '1.1rem',
+                                        fontSize: '1rem',
                                         fontWeight: 600,
                                         margin: 0,
                                         cursor: 'pointer',
